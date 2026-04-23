@@ -44,7 +44,7 @@ COPY patches/small_tweak.patch /home/xeranes/patches/small_tweak.patch
 
 # Build Espresso
 WORKDIR /home/xeranes/espresso
-RUN git apply /home/xeranes/patches/small_tweak.patch
+# RUN git apply /home/xeranes/patches/small_tweak.patch
 
 RUN cd build && \
     cmake .. -DESPRESSO_BUILD_WITH_CUDA=OFF && \
