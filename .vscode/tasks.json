@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run_pypresso",
+      "type": "shell",
+      "command": "/home/xeranes/espresso/build/pypresso",
+      "args": ["${file}"],
+      "problemMatcher": []
+    }
+  ]
+}
