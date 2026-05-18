@@ -1,12 +1,27 @@
+// {
+//   "version": "2.0.0",
+//   "tasks": [
+//     {
+//       "label": "Run_pypresso",
+//       "type": "shell",
+//       "command": "/home/xeranes/espresso/build/pypresso",
+//       "args": ["${file}"],
+//       "problemMatcher": []
+//     }
+//   ]
+// }
 {
   "version": "2.0.0",
   "tasks": [
     {
       "label": "Run_pypresso",
       "type": "shell",
-      "command": "/home/xeranes/espresso/build/pypresso",
-      "args": ["${file}"],
-      "problemMatcher": []
+      "command": "bash",
+      "args": [
+        "-c",
+        "source /home/xeranes/venv/bin/activate && /home/xeranes/espresso/build/pypresso ${file}"
+        // /home/xeranes/espresso/build/pypresso ${file}
+      ]
     }
   ]
 }
