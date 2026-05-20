@@ -88,8 +88,8 @@ eps_ss = 1  # LJ epsilon
 sig_ss = 1  # LJ sigma
 
 # Define the semi-axes of the ellipsoid: (HAS TO BE FLOAT for numba reasons)
-a = 4.0
-b = 2.0
+a = 4
+b = 2
 # c = 3.0
 AXES = np.array(
     [a, b, b]
@@ -162,25 +162,22 @@ def ellipsoid_volume(axes):
     return (4.0 / 3.0) * np.pi * a * b * c
 
 
-def surface_of_n_circ(n):
-    return n * (sig_ss / 2) ** 2 * np.pi
-
-
-def mean_std(ids):
-    "Gives mean and std of next neighbours between particles specified by id lists. Usually in one shell."
-    # TODO part.pairs()
+def mean_std_smallest(ids):
+    "Gives mean, std and smallest distance of next neighbours between particles specified by id lists. Usually in one shell."
     lister = [
         np.linalg.norm(system.part.by_id(i).pos - system.part.by_id(j).pos)
         for i, j in combinations(ids, 2)
         if i != j
     ]
+
     lister.sort()
     mean = np.mean(lister[: n_col_part - 10])
     std = np.std(lister[: n_col_part - 10])
     smallest = min(lister)
-    # this works because among nxn distances, picking the smallest will be roughly equal to next neigbour distances only. Small std confirms.
     return mean, std, smallest
 
+
+# Completely equivalent versions. Just use the non @njit version if you don't use numba
 
 @njit
 def ellipsoid_potential_numba(t, axes, position):
@@ -192,7 +189,6 @@ def ellipsoid_potential_numba(t, axes, position):
         + (((position[2] * axes[2]) / (t + axes[2] ** 2.0))) ** 2.0
         - 1
     )
-
 
 def ellipsoid_potential(t, axes, position):
     """axes should be an array with the a,b,c axes for the ellipsoid. position is the actual particle position.
@@ -207,25 +203,31 @@ def ellipsoid_potential(t, axes, position):
 
 @njit
 def bisect_numba(l_limit, u_limit, axes, position, tol=1e-6, max_iter=50):
+    """
+    Splits interval in half, checks which side contains the root and overwrites the interval to that.
+    Iterate until root within tolerance distance.
+    """
+    f_l = ellipsoid_potential_numba(l_limit, axes, position)
     for _ in range(max_iter):
         midpoint = 0.5 * (l_limit + u_limit)
         f_mid = ellipsoid_potential_numba(midpoint, axes, position)
-        f_l = ellipsoid_potential_numba(l_limit, axes, position)
         if abs(f_mid) < tol or abs(u_limit - l_limit) < tol:
             return midpoint
+            
         if f_mid * f_l < 0:
             u_limit = midpoint
         else:
             l_limit = midpoint
+            f_l = f_mid
     return midpoint
 
-
 def bisect(l_limit, u_limit, function, axes, position):
-    """Provide function and limits. This function returns the root of the function that is within the provided limits.
-    It cannot handle the case in which there is more than one solution."""
+    """
+    Splits interval in half, checks which side contains the root and overwrites the interval to that.
+    Iterate until root within tolerance distance.
+    """
     tol = 10 ** (-6.0)
     midpoint = (u_limit + l_limit) / 2.0
-    # print(midpoint)
     if function(midpoint, axes, position) == 0.0:
         return midpoint
     elif (u_limit - l_limit) < tol:
@@ -240,26 +242,33 @@ def bisect(l_limit, u_limit, function, axes, position):
 
 @njit
 def get_limits_numba(function, axes, position):
-    """This finds the vicinity of the highest root (lower than 100)...."""
+    """
+    Slides a bracket down the function and checks if the sign changes.
+    So whether there's a root inside.
+    """
 
     u_limit = 50  # this was 100 before
     l_limit = u_limit - 0.3  # this was 0.03 before
     i = 0
 
     # Slide down x-vals until root found
+    # print(midpoint)
     while np.sign(function(u_limit, axes, position)) == np.sign(
         function(l_limit, axes, position)
     ):
         l_limit -= 0.1  # this was 0.01 before
         u_limit -= 0.1  # this was 0.01 before
         i += 1
-        if i > 10**4.0:
+        if i > 1e4:
             break
     return l_limit, u_limit
 
 
 def get_limits(function, axes, position):
-    """This finds the vicinity of the highest root (lower than 100)...."""
+    """"
+    Slides a bracket down the function and checks if the sign changes.
+    So whether there's a root inside.
+    """
     u_limit = 50  # this was 100 before
     l_limit = u_limit - 0.3  # this was 0.03 before
     i = 0
@@ -291,19 +300,20 @@ def get_surface_position(t, axes, position):
     z_s = position[2] / ((t / axes[2] ** 2.0) + 1)
     return np.array([x_s, y_s, z_s])
 
-
-# TODO I've made a mistake in restructuring this I think. What I do now is get a whole set of new pos, based on the old set. Instead of 1 by 1 updating each and the next new pos depending on the last individual step. If that is necessary non of the parallelization is possible because numba needs to be pure python, no espresso interferance. Imho it should be fine because of small max displacement. TEST IT!
+# switch commented lines for non numba
 @njit(parallel=True)
-def shift_particle(particle_positions, axes=AXES, mult_axes=None):
+def shift_particle(particle_positions, axes=AXES):
     new_poss = np.zeros_like(particle_positions)
     for i in prange(len(particle_positions)):
-        if mult_axes is not None:
-            axes = mult_axes[i]
-        # for i in range(len(particle_positions)):
+    # for i in range(len(particle_positions)):
         pos = particle_positions[i]
+
+        # Find region for position in which the ellipsoid surface is
         l_limit, u_limit = get_limits_numba(
             ellipsoid_potential_numba, axes, pos)
         # l_limit, u_limit = get_limits(ellipsoid_potential, axes, pos)
+
+        # Find the 
         root = bisect_numba(l_limit, u_limit, axes, pos)
         # root = bisect(l_limit, u_limit, ellipsoid_potential, axes, pos)
         new_poss[i] = get_surface_position_numba(root, axes, pos)
@@ -391,18 +401,13 @@ def fix_vtk(input_file, forces=None):
 #############################################################################################################################
 # region: Outer Shell
 
-# Nr of particles for shell, is an upper bound for if the ellipsoid surface was flat 2D and hex packaging
+# Nr of particles for shell, is an upper bound for if the ellipsoid surface was flat 2D and hex packaging.
+# There is surely a smaller upper bound, but the particles have to spread all the same. I don't expect a high speedup from a better initial guess.
 n_col_part = (
     int((ell_surface_area(AXES) * MAX_SURFACE_FRACTION / ((sig_ss / 2) ** 2 * np.pi)))
 )
 print("Surface Beads: ", n_col_part)
 
-# pre check if the nr of particles on shell does not exceed theoretical coverage bound
-total_surface = surface_of_n_circ(n_col_part)
-ell_surface = ell_surface_area(AXES)
-fraction = total_surface / ell_surface
-print(round(fraction, 4), "< ", MAX_SURFACE_FRACTION)
-assert fraction < MAX_SURFACE_FRACTION
 
 # Create surface beads uniformly distributed over the surface
 for i in range(1, n_col_part + 1):
@@ -431,24 +436,30 @@ for item in folder_path.iterdir():
     if item.is_file():
         item.unlink()
 
+################## Iterating ###################
+
 print(LINE)
 print("Relaxation of the raspberry surface particles")
 t0 = time.time()
 
-k = 0
-smallest_list = []
-wait_nr = 5
+k = 0 # itteration variable
+check_nth = 100 # nr of itterations before checking progress
 
-high_score_smallest = 0
 high_score_mean = 0
-no_improvement_counter = 0
+high_score_smallest = 0
+smallest_list = [] # list for plotting progress afterwards
+removed_at = [] # records time when particles are removed
 
-t_counter = 0
+no_improvement_counter = 0 # goes up when no new high scores
+wait_nr = 5 # target value of no_improvement_counter before removing a particle
+mean_flag = True # dictates whether new highdscores in mean count as progress
+
 high_t = True
-thermal_kick_length = 10
-mean_flag = True
-nth_check = 100
-removed_at = []
+t_counter = 0 # counts itterations with high temperature
+thermal_kick_length = 10 # duration of high temperature state
+
+nth_step_recorded = 25 # record every 25th simulation step
+
 while True:
 
     system.integrator.run(1)
@@ -460,17 +471,24 @@ while True:
         part.pos = pos
 
     # Record frame
-    nth_step_recorded = 25
     if not k % nth_step_recorded:
         system.part.writevtk(
             f"data/shell_animation/frame_{int(k/nth_step_recorded)}.vtk")
+        
+    # Early exit condition for trials
+    # if k == 100:
+    #     break
 
     k += 1
-    if not k % nth_check:
+    if not k % check_nth:
+
+        # Check what to do about thermally exited mode
         if high_t:
+            # Cooler system after 2/3 of time
             if t_counter == int(thermal_kick_length/3*2):
                 system.thermostat.set_langevin(
                     kT=0.01, gamma=1, seed=seed_pass)
+            # Reset to low T domain
             if t_counter == thermal_kick_length:
                 system.thermostat.set_langevin(
                     kT=0.0001, gamma=40.0, seed=seed_pass)
@@ -481,37 +499,39 @@ while True:
             else:
                 t_counter += 1
 
-        # Takes no significant time compared to integrating
-        mean, std, smallest = mean_std(system.part.select(type=1).id)
-
-        if not k % 100:
-            smallest_list.append(smallest)
+        mean, std, smallest = mean_std_smallest(system.part.select(type=1).id)
 
         rel_mean = abs(high_score_mean-mean)/(1-high_score_mean)
         rel_smallest = abs(high_score_smallest-smallest) / \
             (1-high_score_smallest)
+        
+        # Record history for plot
+        if not k % 100:
+            smallest_list.append(smallest)
 
-        # Longer thermal kicks after certain point
+        # Set longer thermal kicks after certain point
         if high_score_mean > 0.98:
             thermal_kick_length = 50
 
+        # TODO THIS SEEMS INEFFECTUAL. Actual forces around 30, dont think high forces are the issue for the final stretch
         # Make progress gentler when close to finished
-        if high_score_smallest > 0.99:
-            system.force_cap = 50
-            nth_check = 10
-            wait_nr = 10
-            mean_flag = False
+        # if high_score_smallest > 0.99:
+        #     system.force_cap = 50
+        #     check_nth = 10
+        #     wait_nr = 10
+        #     mean_flag = False
+        # # Make progress gentler when close to finished
+        # if high_score_smallest > 0.999:
+        #     system.force_cap = 5
+        #     check_nth = 1
+        #     wait_nr = 20
 
-        # Make progress gentler when close to finished
-        if high_score_smallest > 0.999:
-            system.force_cap = 5
-            nth_check = 1
-            wait_nr = 20
-
+        ### Particle Removal ###
         # After smallest distance = 0.99 removing another particle is overkill. Just noise to be settled.
         if (no_improvement_counter == wait_nr and high_score_smallest < 0.99 and high_score_mean < 0.999) or no_improvement_counter == 100:
 
-            # Remove particle furthest from center. Avoids disturbing already formed surface lattices.
+            # Find particle furthest from center t be removed.
+            # Avoids disturbing already formed surface lattices.
             furthest = 0
             for part in system.part:
                 if np.linalg.norm(part.pos) > furthest:
@@ -519,29 +539,33 @@ while True:
                     id_of_furthest = part.id
             system.part.by_id(id_of_furthest).remove()
 
+            # Remove particle
             print(LINE)
             print("PARTICLE REMOVED")
             if not k % 100:
                 removed_at.append(k)
             no_improvement_counter = 0
 
+            # Initiatet thermal kick to skip long equilibriation after removal
             print(LINE)
             print("THERMAL KICK")
             system.thermostat.set_langevin(
                 kT=0.1, gamma=1, seed=seed_pass)
             high_t = True
 
-        # Monitor progress section (only outside high_t)
+        ### Monitor progress section (only outside high_t) ###
         if not high_t:
-            # Catch insignificant progress, for speed up purposes, disabled close to goal (0.99 possibly too high. Lower  it to make sure particles arent removed in excess)
-            if rel_mean < 0.05 and high_score_mean - mean < 0: # and high_score_mean < 0.99 and high_score_smallest < 0.99:
+            
+            # Catch insignificant progress, for speed up purposes, not in the final stretch
+            # Doesn't apply near the end by nature, but maybe not always I dunno
+            if rel_mean < 0.05 and high_score_mean - mean < 0: 
                 no_improvement_counter += 1
                 print(LINE)
                 print("little progress")
                 print("rel_mean: ", round(rel_mean, 3))
                 print("rel_smallest: ", round(rel_smallest, 3))
                 continue
-            # Progress in smallest dist
+            # Improved smallest dist
             elif smallest > high_score_smallest:
                 high_score_smallest = smallest
                 no_improvement_counter = 0
@@ -579,7 +603,6 @@ plt.plot(np.arange(len(smallests_plot)), smallests_plot)
 for i in removed_at:
     plt.axvline(x=int(i/100), color='red', linestyle='--', linewidth=1.0)
 plt.savefig("data/shell_relaxation.png")
-exit()
 
 
 #############################################################################################################################
@@ -588,8 +611,7 @@ exit()
 # Select the desired implementation for virtual sites
 system.virtual_sites = VirtualSitesRelative()
 # Setting min_global_cut is necessary when there is no interaction defined with a range larger than
-# the colloid such that the virtual particles are able to communicate their forces to the real particle
-# at the center of the colloid
+# the colloid such that the virtual particles are able to communicate their forces to the real particleat the center of the colloid
 # Needs to be at least max(real.pos - virtual.pos)
 system.min_global_cut = radius_col
 
@@ -601,9 +623,7 @@ momIy = 0
 momIz = 0
 
 
-# up to this point I would've assumed that it was only going to be a refference point, even partially overlapped by the last filling particles or something
-# used to all be system.part[i] seems like a mistake tbh considering the section after this
-# without central particle.
+# TODO is com a point of refference for computation? Is particle 0 physically real?
 for i in range(1, n_col_part):
     momIx += np.power(np.linalg.norm(com[1:] -
                       system.part.by_id(i).pos[1:]), 2)
@@ -621,12 +641,12 @@ for i in range(1, n_col_part):
     momIz += np.power(np.linalg.norm(com[:2] -
                       system.part.by_id(i).pos[:2]), 2)
 
-# note that the real particle must be at the center of mass of the colloid because of the integrator
+# note that the real (as in non virtual, not physically) particle must be at the center of mass of the colloid because of the integrator
 print("\n# moving central particle from {} to {}".format(
     system.part.by_id(0).pos, com))
 system.part.by_id(0).fix = [False, False, False]
 system.part.by_id(0).pos = com
-system.part.by_id(0).mass = n_col_part
+system.part.by_id(0).mass = len(system.part.select(type=1))
 
 system.part.by_id(0).rinertia = np.array([momIx, momIy, momIz])
 print("System rotational moment of inertia: ", system.part.by_id(0).rinertia)
@@ -637,7 +657,6 @@ for p in system.part.select(type=1):
 
 system.part.by_id(0).pos = (0, 0, 0)
 system.integrator.run(0)
-
 
 # endregion
 
@@ -650,7 +669,7 @@ system.non_bonded_inter[1, 1].lennard_jones.set_params(
     epsilon=0.0, sigma=1.0, cutoff=1.0, shift=0.0
 )
 system.non_bonded_inter[1, 2].lennard_jones.set_params(
-    epsilon=10, sigma=sig_ss, cutoff=sig_ss, shift=10
+    epsilon=eps_ss, sigma=sig_ss, cutoff=sig_ss, shift=eps_ss
 )
 system.non_bonded_inter[2, 2].lennard_jones.set_params(
     epsilon=eps_ss, sigma=sig_ss, cutoff=sig_ss, shift=eps_ss
@@ -658,29 +677,90 @@ system.non_bonded_inter[2, 2].lennard_jones.set_params(
 
 # Filling the ellipsoid. It might be way better here to start with a hcp configuration and shaving off any particles that violate ellipsoid equation.
 # With some padding to the ellipsoid. Rather too much than too few.
-inner_axes = [i - 1 for i in AXES]
-vol_axes = [i - 1 + (1 - np.sqrt(3) / 2) for i in AXES]
-inner_vol = ellipsoid_volume(vol_axes)
-vol_to_fill = inner_vol * MAX_VOLUME_FRACTION
-n_fill_part = int((vol_to_fill / (4 / 3 * (sig_ss / 2) ** 3 * np.pi)))
-print("# Number of filling beads = {}".format(n_fill_part))
+# inner_axes = [i - 1 for i in AXES]
+# vol_axes = [i - 1 + (1 - np.sqrt(3) / 2) for i in AXES]
+# inner_vol = ellipsoid_volume(vol_axes)
+# vol_to_fill = inner_vol * MAX_VOLUME_FRACTION
+# n_fill_part = int((vol_to_fill / (4 / 3 * (sig_ss / 2) ** 3 * np.pi)))
+# print("# Number of filling beads = {}".format(n_fill_part))
 
-for i in range(n_col_part + 1, n_col_part + n_fill_part + 1):
-    while True:
-        x = np.random.rand() * inner_axes[0] * np.random.choice([-1, 1])
-        y = np.random.rand() * inner_axes[1] * np.random.choice([-1, 1])
-        z = np.random.rand() * inner_axes[2] * np.random.choice([-1, 1])
+# for i in range(n_col_part + 1, n_col_part + n_fill_part + 1):
+#     while True:
+#         x = np.random.rand() * inner_axes[0] * np.random.choice([-1, 1])
+#         y = np.random.rand() * inner_axes[1] * np.random.choice([-1, 1])
+#         z = np.random.rand() * inner_axes[2] * np.random.choice([-1, 1])
 
-        d = np.sqrt(
-            (x**2.0 / (inner_axes[0] + (1 - np.sqrt(3) / 2)) ** 2.0)
-            + (y**2.0 / (inner_axes[1] + (1 - np.sqrt(3) / 2)) ** 2.0)
-            + (z**2.0 / (inner_axes[2] + (1 - np.sqrt(3) / 2)) ** 2.0)
-        )
-        if d < 1:
-            break
+#         d = np.sqrt(
+#             (x**2.0 / (inner_axes[0] + (1 - np.sqrt(3) / 2)) ** 2.0)
+#             + (y**2.0 / (inner_axes[1] + (1 - np.sqrt(3) / 2)) ** 2.0)
+#             + (z**2.0 / (inner_axes[2] + (1 - np.sqrt(3) / 2)) ** 2.0)
+#         )
+#         if d < 1:
+#             break
 
-    vol_pos = np.array([x + 45, y + 45, z + 45])
-    system.part.add(id=i, pos=vol_pos, type=2)
+#     vol_pos = np.array([x +box_l/2, y+box_l/2 , z +box_l/2])
+#     system.part.add(id=i, pos=vol_pos, type=2)
+
+
+### Blatant AI filing geometry generation ###
+def hex_grid_2d(xmin, xmax, ymin, ymax, spacing):
+    """
+    Generates 2D hexagonal grid points in XY plane.
+    """
+    dx = spacing
+    dy = np.sqrt(3) * spacing / 2
+
+    points = []
+
+    j = 0
+    y = ymin
+    while y <= ymax:
+        offset = (j % 2) * dx / 2
+        x = xmin + offset
+
+        while x <= xmax:
+            points.append((x, y))
+            x += dx
+
+        y += dy
+        j += 1
+
+    return np.array(points)
+
+
+def hex_ellipsoid_points(a, b, c, spacing = 1):
+    """
+    Generates hex-like packed points inside ellipsoid:
+        x^2/a^2 + y^2/b^2 + z^2/c^2 <= 1
+    """
+
+    # bounding box
+    xmin, xmax = -a, a
+    ymin, ymax = -b, b
+    zmin, zmax = -c, c
+
+    xy = hex_grid_2d(xmin, xmax, ymin, ymax, spacing)
+
+    points = []
+
+    # z-layers (simple uniform slicing; can also hex-stagger in 3D if desired)
+    dz = np.sqrt(2/3) * spacing  # roughly isotropic spacing
+
+    z = zmin
+    while z <= zmax:
+        for x, y in xy:
+            if (x*x)/(a*a) + (y*y)/(b*b) + (z*z)/(c*c) <= 1.0:
+                points.append((x+box_l/2, y+box_l/2, z+box_l/2))
+        z += dz
+
+    return np.array(points)
+
+
+################################
+arr_of_points = hex_ellipsoid_points(AXES[0], AXES[1], AXES[1])
+
+for pos in arr_of_points:
+    system.part.add(pos = pos, type = 2)
 
 system.force_cap = 100
 system.time_step = eq_tstep
@@ -693,35 +773,74 @@ system.part.by_id(0).rotation = [0, 0, 0]
 print("Relaxation of the raspberry filling particles")
 t0 = time.time()
 k = 0
-with open("trajectory_inside.vtf", mode="w+t") as fp:
-    # Write the structure block
-    espressomd.io.writer.vtf.writevsf(system, fp)
-    while True:
-        system.integrator.run(1)
-        espressomd.io.writer.vtf.writevcf(system, fp)
 
-        if k > 5000:
+
+# Empty folder for recording frames for Paraview
+folder_path = Path("data/inside_animation")
+for item in folder_path.iterdir():
+    if item.is_file():
+        item.unlink()
+
+forces = []
+second_stage = False
+while True:
+    system.integrator.run(1)
+
+    # Disable thermal kick
+    if not k% 300:
+        system.thermostat.set_langevin(kT=0.000001, gamma=40.0, seed=seed_pass)
+
+    if not k % 3000 and second_stage:
+        # Find particle furthest from center t be removed.
+        # Avoids disturbing already formed surface lattices.
+        furthest = 0
+        for part in system.part.select(type = 2):
+            if np.linalg.norm(part.pos) > furthest:
+                furthest = np.linalg.norm(part.pos)
+                id_of_furthest = part.id
+        # Remove particle
+        system.part.by_id(id_of_furthest).remove()
+        print(LINE)
+        print("PARTICLE REMOVED")
+        # Thermal kick
+        system.thermostat.set_langevin(kT=0.1, gamma=1, seed=seed_pass)
+
+
+    if not k % 25:
+        system.part.writevtk(f"data/inside_animation/inside{k}.vtk")
+        forces.append(max([np.linalg.norm(part.f) for part in system.part.select(type=2)]))
+
+    if k % 100 == 0:
+        if max([np.linalg.norm(part.f) for part in system.part.select(type=2)]) <70 and not second_stage:
+            second_stage = True
+            
+            for part in system.part.select(type = 2):
+                x, y, z = part.pos
+                x, y, z = [i - j for (i,j) in zip(part.pos, center)]
+                a, b, c = AXES
+
+                s = (x*x)/(a*a) + (y*y)/(b*b) + (z*z)/(c*c)
+                if s > 1:
+                    part.remove()
+                    k+=25
+                    system.part.writevtk(f"data/inside_animation/inside{k}.vtk")
+
+
+        mean, std, smallest = mean_std_smallest(system.part.select(type=2).id)
+        print("Steps: ", k)
+        print("Mean: ", mean)
+        print("Std: ", std)
+        print("Smallest: ", smallest)
+        if smallest > 1:
             break
-        if k % 500 == 0:
-            forces = np.array([p.f for p in system.part.select(type=2)])
-            system.part.writevtk("type2.vtk", types=[2])
-            fix_vtk("type2.vtk", forces)
-            forces = np.array([p.f for p in system.part.select(type=1)])
-            system.part.writevtk("type1.vtk", types=[1])
-            fix_vtk("type1.vtk", forces)
+    k += 1
 
-            write()
+plt.plot(np.arange(len(forces)), forces)
+plt.savefig("data/max_forces.png")
 
-            mean, std, smallest = mean_std(system.part.select(type=2).id)
-            print("Steps: ", k)
-            print("Mean: ", mean)
-            print("Std: ", std)
-            print("Smallest: ", smallest)
-            if std < 0.0001 and mean > 1 and smallest > 1:
-                break
-        k += 1
 print("Relaxation steps taken: ", k)
 print("Time: ", time.time() - t0)
+
 
 # Restore time step
 system.time_step = time_step
@@ -743,8 +862,6 @@ system.integrator.run(0)
 # endregion
 
 # WRITE OUTPUT
-
-write()
 
 # write coordinates to textfile
 file = open("raspberry_coordinates" +
