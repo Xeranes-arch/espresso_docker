@@ -1,4 +1,3 @@
 ignore/
-data/shell_animation/
-data/inside_animation/
+data/vtk_frames/
 .devcontainer/

@@ -1,3 +1,4 @@
 {
-    "DockerSetup.enable": true
+    "DockerSetup.enable": true,
+    "editor.formatOnSave": true
 }

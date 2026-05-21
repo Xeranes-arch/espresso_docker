@@ -1,0 +1,13 @@
+# TODO add to devcontainer on PC
+# "customizations": {
+#     "vscode": {
+#         "settings": {
+#         "python.defaultInterpreterPath": "/home/xeranes/espresso/build/pypresso"
+#         },
+#         "extensions": [
+#         "ms-python.python"
+#         ]
+#     }
+# }
+
+_________________________________________________________--

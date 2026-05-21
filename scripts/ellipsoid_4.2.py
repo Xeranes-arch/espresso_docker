@@ -1,29 +1,23 @@
-# Setup ellipsoid geometry in desired aspect ratios.
-# Uses equillibriation to space particles, first on outer shell, then for the filling particles.
-# Pushes excess filling particles outside of the outer shell, which can then be removed.
-# It is an attempt to reach nice packing of an ellipsoid, but there is nothing theoretical or optimal about it.
+# README
+# Generates an Ellipsoid geometry raspberry particle filled as dense as can be, but without overlaps
 
-# Only then! correcting mistakes and shortening to necessary bits
-# Then expanding to different aspect ratios
-
+# You should only really need to change the AXES to what you want
+# If funky results, enable save_visualization. Written as series of frames for paraview.
 
 #############################################################################################################################
 # region: Import
 
 from pathlib import Path
-from espressomd.virtual_sites import VirtualSitesRelative
-from espressomd.io.writer import vtf
-from espressomd.shapes import Ellipsoid
+
 import espressomd
-from itertools import combinations
-import numpy as np
+from espressomd.virtual_sites import VirtualSitesRelative
+
 import time
 import numba
-from numba import njit, prange
+import numpy as np
 import matplotlib.pyplot as plt
 
-# DATA PATH AND HOW TO SAVE
-# plt.savefig("/home/xeranes/DATA/fig.png")
+from functions import *
 
 espressomd.assert_features(
     [
@@ -63,39 +57,47 @@ print("Number of threads: ", numba.get_num_threads())
 # endregion
 
 #############################################################################################################################
-# region: System parameters
+
+# region: Constants
 
 # output formatting
 LINE = "\n___________________________"
-
 # Hex packing 2D
 MAX_SURFACE_FRACTION = 0.907
 # Hcp packing 3D
 MAX_VOLUME_FRACTION = 0.74048
 
+# endregion
+# region: System parameters
+
 # size of the simulation box, arbitrary, should be larger than the raspberry...
 box_l = 90.0
 center = [box_l / 2 for _ in range(3)]
-number_of_raspberries = 1  # leave this at 1
-
 
 skin = 3  # Skin parameter for the Verlet lists
 time_step = 0.001
-eq_tstep = 0.001
 
-# Interaction parameters (Lennard-Jones for each raspberry)
+# Interaction parameter
 eps_ss = 1  # LJ epsilon
 sig_ss = 1  # LJ sigma
 
-# Define the semi-axes of the ellipsoid: (HAS TO BE FLOAT for numba reasons)
-a = 3
-b = 2
-# c = 3.0
+# Define the semi-axes of the ellipsoid.
+# Only Spheroids a != b = c, because otherwise the resetting to surface breaks, I think.
+
+# for running from outside with args if you want several geometries cued up
+import sys
+a = float(sys.argv[1])
+b = float(sys.argv[2])
+print(a,b)
+
+# a = 2
+# b = 2
 AXES = np.array(
     [a, b, b]
-)  # Lenth of the axes, the later constraint geometry only allows ellipsoids of rotation
+)
 radius_col = max(AXES)
 
+save_visualization = False
 # endregion
 
 #############################################################################################################################
@@ -106,18 +108,16 @@ system.time_step = time_step
 system.cell_system.skin = skin
 system.periodicity = [True, True, True]
 
-# the LJ potential (WCA potential) between surface beads causes them to be roughly equidistant on the
-# colloid surface
+# the LJ potential (WCA potential) between surface beads
 system.non_bonded_inter[1, 1].lennard_jones.set_params(
     epsilon=eps_ss, sigma=sig_ss, cutoff=sig_ss, shift=eps_ss+0.1
 )
 
 # Seed
-seed_pass = np.random.randint(0, 2**32 - 1)  # valid 32bit range
+seed_pass = np.random.randint(0, 2**32 - 1)
 print("Seed Pass: ", seed_pass)
 
-# for the warmup we use a Langevin thermostat with an extremely low temperature and high friction coefficient
-# such that the trajectories roughly follow the gradient of the potential while not accelerating too much
+# Going to even lower temp regime 0.00001 might make sense, but this seems to function well
 system.thermostat.set_langevin(kT=0.001, gamma=40.0, seed=seed_pass)
 
 print(LINE)
@@ -128,252 +128,6 @@ colPos = (0, 0, 0)
 # Place the central particle
 system.part.add(id=0, pos=colPos, type=0, fix=(
     True, True, True), rotation=(1, 1, 1))
-
-# endregion
-
-#############################################################################################################################
-# region: Functions
-
-# Redefine writevtk
-
-
-def writevtk(path, types=None):
-    # call original function
-    if types:
-        system.part.writevtk(path, types)
-    else:
-        system.part.writevtk(path)
-
-    # extra behavior AFTER writing
-    with open(path, "r") as f:
-        lines = f.readlines()
-
-    out = []
-    for line in lines:
-        if line.startswith("SCALARS"):
-            parts = line.split()
-            out.append(f"VECTORS {parts[1]} float\n")
-        elif line.startswith("LOOKUP_TABLE"):
-            continue
-        else:
-            out.append(line)
-
-    out.append("\nSCALARS type float 1")
-    out.append("\nLOOKUP_TABLE default")
-    if types:
-        for part in system.part.select(type=types):
-            out.append("\n" + str(part.type))
-    else:
-        for part in system.part:
-            out.append("\n" + str(part.type))
-
-    with open(path, "w") as f:
-        f.writelines(out)
-
-
-def ell_surface_area(axes):
-    """
-    We approximate the surface area of the ellipsoid with the Knud Thomsens Formula (See wikipedia)
-    axes has to be an array in the form [a,b,c] with the semi axes of the ellipsoid.
-    """
-    knud_exponent = 1.6075
-    surf_area = (
-        4.0
-        * np.pi
-        * (
-            (
-                (axes[0] * axes[1]) ** knud_exponent
-                + (axes[0] * axes[2]) ** knud_exponent
-                + (axes[1] * axes[2]) ** knud_exponent
-            )
-            / (3.0)
-        )
-        ** (1.0 / knud_exponent)
-    )
-    return surf_area
-
-
-def ellipsoid_volume(axes):
-    a, b, c = axes
-    return (4.0 / 3.0) * np.pi * a * b * c
-
-
-def mean_std_smallest(ids):
-    "Gives mean, std and smallest distance of next neighbours between particles specified by id lists. Usually in one shell."
-    lister = [
-        np.linalg.norm(system.part.by_id(i).pos - system.part.by_id(j).pos)
-        for i, j in combinations(ids, 2)
-        if i != j
-    ]
-
-    lister.sort()
-    mean = np.mean(lister[: len(ids) - 10])
-    std = np.std(lister[: len(ids) - 10])
-    smallest = min(lister)
-    return mean, std, smallest
-
-
-@njit
-def ellipsoid_potential_numba(t, axes, position):
-    """axes should be an array with the a,b,c axes for the ellipsoid. position is the actual particle position.
-    The function returns the nearest surface position as an array [x y z]"""
-    return (
-        (((position[0] * axes[0]) / (t + axes[0] ** 2.0))) ** 2.0
-        + (((position[1] * axes[1]) / (t + axes[1] ** 2.0))) ** 2.0
-        + (((position[2] * axes[2]) / (t + axes[2] ** 2.0))) ** 2.0
-        - 1
-    )
-
-
-@njit
-def bisect_numba(l_limit, u_limit, axes, position, tol=1e-6, max_iter=50):
-    """
-    Splits interval in half, checks which side contains the root and overwrites the interval to that.
-    Iterate until root within tolerance distance.
-    """
-    f_l = ellipsoid_potential_numba(l_limit, axes, position)
-    for _ in range(max_iter):
-        midpoint = 0.5 * (l_limit + u_limit)
-        f_mid = ellipsoid_potential_numba(midpoint, axes, position)
-        if abs(f_mid) < tol or abs(u_limit - l_limit) < tol:
-            return midpoint
-
-        if f_mid * f_l < 0:
-            u_limit = midpoint
-        else:
-            l_limit = midpoint
-            f_l = f_mid
-    return midpoint
-
-
-@njit
-def get_limits_numba(function, axes, position):
-    """
-    Slides a bracket down the function and checks if the sign changes.
-    So whether there's a root inside.
-    """
-
-    u_limit = 50  # this was 100 before
-    l_limit = u_limit - 0.3  # this was 0.03 before
-    i = 0
-
-    # Slide down x-vals until root found
-    # print(midpoint)
-    while np.sign(function(u_limit, axes, position)) == np.sign(
-        function(l_limit, axes, position)
-    ):
-        l_limit -= 0.1  # this was 0.01 before
-        u_limit -= 0.1  # this was 0.01 before
-        i += 1
-        if i > 1e4:
-            break
-    return l_limit, u_limit
-
-
-@njit
-def get_surface_position_numba(t, axes, position):
-    x_s = position[0] / ((t / axes[0] ** 2.0) + 1)
-    y_s = position[1] / ((t / axes[1] ** 2.0) + 1)
-    z_s = position[2] / ((t / axes[2] ** 2.0) + 1)
-    return np.array([x_s, y_s, z_s])
-
-# switch commented lines for non numba
-
-
-@njit(parallel=True)
-def shift_particle(particle_positions, axes=AXES):
-    new_poss = np.zeros_like(particle_positions)
-    for i in prange(len(particle_positions)):
-        # for i in range(len(particle_positions)):
-        pos = particle_positions[i]
-
-        # Find region for position in which the ellipsoid surface is
-        l_limit, u_limit = get_limits_numba(
-            ellipsoid_potential_numba, axes, pos)
-        # l_limit, u_limit = get_limits(ellipsoid_potential, axes, pos)
-
-        # Find the
-        root = bisect_numba(l_limit, u_limit, axes, pos)
-        # root = bisect(l_limit, u_limit, ellipsoid_potential, axes, pos)
-        new_poss[i] = get_surface_position_numba(root, axes, pos)
-        # new_poss[i] = get_surface_position(root, axes, pos)
-    return new_poss
-
-
-def write():
-    """Writes Snapshot to vtf"""
-    custom_data = open(
-        "raspberry_ellipsoid_visual" + str(AXES).replace(" ", "_") + ".vtf", mode="w+t"
-    )
-    vtf.writevsf(system, custom_data)
-    vtf.writevcf(system, custom_data)
-    print("written to:\n raspberry_ellipsoid_visual" +
-          str(AXES).replace(" ", "_") + ".vtf")
-
-
-def fix_vtk(input_file, forces=None):
-
-    # Input and output file
-    output_file = input_file[:-4] + "_fixed.vtk"
-
-    lines = []
-    # Read the input file
-    with open(input_file, "r") as f:
-        lines = f.readlines()
-
-    # Find where POINTS start
-    points_start = None
-    num_points = None
-    for i, line in enumerate(lines):
-        if line.startswith("POINTS"):
-            points_start = i
-            num_points = int(line.split()[1])
-            break
-
-    if points_start is None:
-        raise ValueError("No POINTS section found in the VTK file.")
-
-    # Determine where points end
-    points_end = points_start + 1 + num_points
-
-    # Extract header and points
-    header_lines = lines[: points_start + 1]  # include POINTS line
-    point_lines = lines[points_start + 1: points_end]
-
-    # Create CELLS section: one vertex per point
-    cells_lines = [f"CELLS {num_points} {num_points*2}\n"]
-    for i in range(num_points):
-        cells_lines.append(f"1 {i}\n")
-
-    # Create CELL_TYPES section: VTK_VERTEX
-    cell_types_lines = [f"CELL_TYPES {num_points}\n"]
-    for _ in range(num_points):
-        cell_types_lines.append("1\n")
-
-    if forces is not None:
-        # Add VECTORS section if forces are provided
-        forces = np.array(forces)  # make sure it's a numpy array
-
-        if forces.shape[0] != num_points or forces.shape[1] != 3:
-            raise ValueError(
-                f"Forces array must have shape ({num_points},3). Is:{forces.shape[0], forces.shape[1]}."
-            )
-
-        vector_lines = [f"POINT_DATA {num_points}\n", "VECTORS forces float\n"]
-        for vec in forces:
-            vector_lines.append(f"{vec[0]} {vec[1]} {vec[2]}\n")
-
-    # Combine everything
-    new_lines = (
-        header_lines + point_lines + cells_lines + cell_types_lines + vector_lines
-    )
-
-    # Write to output
-    with open(output_file, "w") as f:
-        f.writelines(new_lines)
-
-    print(f"Fixed VTK written to {output_file}")
-
 
 # endregion
 
@@ -389,6 +143,7 @@ print("Surface Beads: ", n_surface_part)
 
 
 # Create surface beads uniformly distributed over the surface
+# Corrction: That's not uniform. Doesn't matter tho, so I'm leaving it in.
 for i in range(1, n_surface_part + 1):
     u = np.random.rand()
     v = np.random.rand()
@@ -405,24 +160,25 @@ for i in range(1, n_surface_part + 1):
     colSurfPos = np.array([x, y, z])
     system.part.add(id=i, pos=colSurfPos, type=1)
 
-# Relax bead positions.
-system.force_cap = 1000
-system.time_step = eq_tstep
-
-# Empty folder for recording frames for Paraview
-folder_path = Path("data/shell_animation")
-for item in folder_path.iterdir():
-    if item.is_file():
-        item.unlink()
-
 ################## Iterating ###################
 
+# Empty folder for recording frames for Paraview
+if save_visualization:
+    folder_path = Path("data/vtk_frames/shell_animation")
+    for item in folder_path.iterdir():
+        if item.is_file():
+            item.unlink()
+nth_step_recorded = 25  # record every 25th simulation step
+
+# Large overlaps with WCA could explode the system. Baby steps.
+system.force_cap = 1000
+
 print(LINE)
-print("Relaxation of the raspberry surface particles")
+print("Relaxation of the surface particles")
 t0 = time.time()
 
-k = 0  # itteration variable
-check_nth = 100  # nr of itterations before checking progress
+k = 0  # iteration variable
+check_nth = 100  # nr of iterations before checking progress
 
 high_score_mean = 0
 high_score_smallest = 0
@@ -431,13 +187,11 @@ removed_at = []  # records time when particles are removed
 
 no_improvement_counter = 0  # goes up when no new high scores
 wait_nr = 5  # target value of no_improvement_counter before removing a particle
-mean_flag = True  # dictates whether new highdscores in mean count as progress
 
 high_t = True
-t_counter = 0  # counts itterations with high temperature
-phase_duration = 10  # duration of high temperature state
+t_counter = 0  # counts iterations with high temperature
+phase_duration = 10  # duration of high temperature state (* check_nth)
 
-nth_step_recorded = 25  # record every 25th simulation step
 
 while True:
 
@@ -445,17 +199,18 @@ while True:
 
     # now put all particles back on the surface
     particle_positions = system.part.select(type=1).pos
-    new_poss = shift_particle(particle_positions)
+    new_poss = shift_particle(particle_positions, AXES)
     for part, pos in zip(system.part.select(type=1), new_poss):
         part.pos = pos
 
     # Record frame
     if not k % nth_step_recorded:
-        writevtk(
-            f"data/shell_animation/frame_{int(k/nth_step_recorded)}.vtk")
+        if save_visualization:
+            writevtk(
+                f"data/vtk_frames/shell_animation/frame_{int(k/nth_step_recorded)}.vtk", system)
 
     # Early exit condition for trials
-    # if k == 1000:
+    # if k == 1000: 
     #     break
 
     k += 1
@@ -478,26 +233,26 @@ while True:
             else:
                 t_counter += 1
 
-        mean, std, smallest = mean_std_smallest(system.part.select(type=1).id)
-
+        # Calculate metrics
+        mean, std, smallest = mean_std_smallest(system.part.select(type=1).id, system)
         rel_mean = abs(high_score_mean-mean)/(1-high_score_mean)
-        rel_smallest = abs(high_score_smallest-smallest) / \
-            (1-high_score_smallest)
+        rel_smallest = abs(high_score_smallest-smallest) / (1-high_score_smallest)
 
         # Record history for plot
         if not k % 100:
             smallest_list.append(smallest)
 
         # Set longer thermal kicks after certain point
+        # Because the fewer the particles, the slower they are to spread out by themselves
         if high_score_mean > 0.98:
             phase_duration = 50
 
         ### Particle Removal ###
-        # After smallest distance = 0.99 removing another particle is overkill. Just noise to be settled.
+        # After smallest distance = 0.99 removing another particle is overkill. Just noise to be settled. Make exception after long enough.
         if (no_improvement_counter == wait_nr and high_score_smallest < 0.99 and high_score_mean < 0.999) or no_improvement_counter == 100:
 
-            # Find particle furthest from center t be removed.
-            # Avoids disturbing already formed surface lattices.
+            # Find particle furthest from center to be removed.
+            # Avoids disturbing already formed compact lattices.
             furthest = 0
             for part in system.part:
                 if np.linalg.norm(part.pos) > furthest:
@@ -514,7 +269,7 @@ while True:
                 removed_at.append(k)
             no_improvement_counter = 0
 
-            # Initiatet thermal kick to skip long equilibriation after removal
+            # Initiate thermal kick to skip long equilibriation after removal
             print(LINE)
             print("THERMAL KICK")
             system.thermostat.set_langevin(
@@ -542,7 +297,7 @@ while True:
                 print("Smallest: ", smallest)
                 print("Nr of surface particles: ", len(system.part)-1)
             # Or improved mean dist
-            elif mean > high_score_mean and mean_flag:
+            elif mean > high_score_mean:
                 high_score_mean = mean
                 no_improvement_counter = 0
 
@@ -567,29 +322,25 @@ print(LINE)
 print("Relaxation steps taken: ", k)
 print("Time: ", time.time() - t0)
 
-# Restore time step
-system.time_step = time_step
 # Restore low temperature regime
 system.thermostat.set_langevin(kT=0.001, gamma=40.0, seed=seed_pass)
 
-# endregion
-smallests_plot = smallest_list[5:]
-plt.plot(np.arange(len(smallests_plot)), smallests_plot)
-for i in removed_at:
-    plt.axvline(x=int(i/100), color='red', linestyle='--', linewidth=1.0)
-plt.savefig("data/shell_relaxation.png")
+smallest_list = smallest_list[5:]
+if save_visualization:
+    plt.plot(np.arange(len(smallest_list)), smallest_list)
+    for i in removed_at:
+        plt.axvline(x=int(i/100), color='red', linestyle='--', linewidth=1.0)
+    plt.savefig("data/shell_relaxation.png")
 
+# endregion
 
 #############################################################################################################################
 # region: Virtual sites
 
 # Select the desired implementation for virtual sites
 system.virtual_sites = VirtualSitesRelative()
-# Setting min_global_cut is necessary when there is no interaction defined with a range larger than
-# the colloid such that the virtual particles are able to communicate their forces to the real particleat the center of the colloid
-# Needs to be at least max(real.pos - virtual.pos)
+# min_global_cut needs to be bigger than all virtual bond lengths 
 system.min_global_cut = radius_col
-
 
 # Calculate the center of mass position (com) and the moment of inertia (momI) of the colloid
 com = np.average(system.part.select(type=1).pos, axis=0)
@@ -648,108 +399,32 @@ system.non_bonded_inter[2, 2].lennard_jones.set_params(
     epsilon=eps_ss, sigma=sig_ss, cutoff=sig_ss, shift=eps_ss
 )
 
-### Blatant AI filing geometry generation ###
-
-
-def hex_grid_2d(xmin, xmax, ymin, ymax, spacing):
-    """
-    Generates 2D hexagonal grid points in XY plane.
-    """
-    dx = spacing
-    dy = np.sqrt(3) * spacing / 2
-
-    points = []
-
-    j = 0
-    y = ymin
-    while y <= ymax:
-        offset = (j % 2) * dx / 2
-        x = xmin + offset
-
-        while x <= xmax:
-            points.append((x, y))
-            x += dx
-
-        y += dy
-        j += 1
-
-    return np.array(points)
-
-
-def hex_ellipsoid_points(a, b, c, spacing=1.0):
-    """
-    Generates HCP (ABAB) packed points inside ellipsoid:
-        x^2/a^2 + y^2/b^2 + z^2/c^2 <= 1
-    """
-
-    dx = spacing
-    dy = np.sqrt(3) * spacing / 2
-    dz = np.sqrt(2/3) * spacing
-
-    xmin, xmax = -a, a
-    ymin, ymax = -b, b
-    zmin, zmax = -c, c
-
-    points = []
-
-    shift = (dx / 2, dy / 3)  # B-layer shift in XY
-
-    jz = 0
-    z = zmin
-
-    while z <= zmax:
-
-        # decide layer type
-        if jz % 2 == 0:
-            ox, oy = 0.0, 0.0   # A layer
-        else:
-            ox, oy = shift      # B layer
-
-        j = 0
-        y = ymin
-
-        while y <= ymax:
-            x = xmin + (j % 2) * dx / 2 + ox
-
-            while x <= xmax:
-                if (x*x)/(a*a) + (y*y)/(b*b) + (z*z)/(c*c) <= 1.0:
-                    points.append((x+box_l/2, y+box_l/2, z+box_l/2))
-                x += dx
-
-            y += dy
-            j += 1
-
-        z += dz
-        jz += 1
-
-    return np.array(points)
-
 
 ################################
 # If perfect Hcp: last sphere has to be placed at shell - tetraheder hight
 arr_of_points = hex_ellipsoid_points(
-    AXES[0], AXES[1], AXES[1])
+    AXES[0], AXES[1], AXES[1], box_l)
 
 for pos in arr_of_points:
     system.part.add(pos=pos, type=2)
 
 system.force_cap = 100
-system.time_step = eq_tstep
 
 system.part.by_id(0).pos = center
 system.part.by_id(0).fix = [1, 1, 1]
 system.part.by_id(0).rotation = [0, 0, 0]
 
 
-print("Relaxation of the raspberry filling particles")
+print("Relaxation of the filling particles")
 t0 = time.time()
 
 
 # Empty folder for recording frames for Paraview
-folder_path = Path("data/inside_animation")
-for item in folder_path.iterdir():
-    if item.is_file():
-        item.unlink()
+if save_visualization:
+    folder_path = Path("data/vtk_frames/inside_animation")
+    for item in folder_path.iterdir():
+        if item.is_file():
+            item.unlink()
 
 c_counter = 0
 t_counter = 0
@@ -796,9 +471,10 @@ while True:
         c_counter += 1
 
     if not k % 25:
-        writevtk(f"data/inside_animation/inside{k}.vtk")
-        forces.append(max([np.linalg.norm(part.f)
-                      for part in system.part.select(type=2)]))
+        if save_visualization:
+            writevtk(f"data/vtk_frames/inside_animation/inside{k}.vtk", system)
+            forces.append(max([np.linalg.norm(part.f)
+                        for part in system.part.select(type=2)]))
 
     # Remove all particles outside and transition to second stage
     if k % 100 == 0 and not second_stage:
@@ -815,12 +491,13 @@ while True:
                 if s > 1:
                     part.remove()
                     k += 25
-                    writevtk(
-                        f"data/inside_animation/inside{k}.vtk")
+                    if save_visualization:
+                        writevtk(
+                            f"data/vtk_frames/inside_animation/inside{k}.vtk", system)
 
     if not k % 100:
         mean, std, smallest = mean_std_smallest(
-            system.part.all().id[1:])
+            system.part.all().id[1:], system)
         print("Steps: ", k)
         print("Mean: ", mean)
         print("Std: ", std)
@@ -833,9 +510,9 @@ while True:
             break
 
     k += 1
-
-plt.plot(np.arange(len(forces)), forces)
-plt.savefig("data/max_forces.png")
+if save_visualization:
+    plt.plot(np.arange(len(forces)), forces)
+    plt.savefig("data/max_forces.png")
 
 print("Relaxation steps taken: ", k)
 print("Time: ", time.time() - t0)
@@ -845,33 +522,26 @@ print("Shell particles: ", len(system.part.select(type=1)))
 print("Inner particles: ", len(system.part.select(type=2)))
 print("Steps taken: ", k)
 
-# Restore time step
-system.time_step = time_step
-
-for p in system.part.select(type=2):
-    p.vs_auto_relate_to(0)
-
-#######################################################################
-
-system.part.by_id(0).pos = center
-system.integrator.run(0)
-
 # endregion
 
-# WRITE OUTPUT
+#############################################################################################################################
+# region: Output
 
 # write coordinates to textfile
-file = open("raspberry_coordinates" +
-            str(AXES).replace(" ", "_") + ".txt", "w+t")
+filename = "data/raspberry_coordinates" + str(AXES).replace(" ", "_") + ".txt"
+
+positions = []
 for x in system.part:
-    file.write("{}\t{}\t{}\t{}\n".format(x.pos[0], x.pos[1], x.pos[2], x.type))
-file.close()
+    # Except central particle
+    if not part.id:
+        continue
+    positions.append(part.pos)
+np.savetxt(filename, np.array(positions))
 
-print(
-    "raspberry_coordinates"
-    + str(AXES).replace(" ", "_")
-    + ".txt contains coordinates of raspberry"
-)
-
+print(LINE)
+print(filename)
+print("contains coordinates of raspberry")
 
 print("Reached the end.")
+print(LINE)
+# endregion
