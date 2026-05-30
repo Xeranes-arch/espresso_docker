@@ -1,12 +1,28 @@
-# README
-# Generates an Ellipsoid geometry raspberry particle filled as dense as can be, but without overlaps
+#############################################################################################################################
+# #############################################################################################################################
 
-# You should only really need to change the AXES to what you want
+# README
+# Generates an Ellipsoid geometry raspberry particle filled as dense as can be, but without overlaps.
+# Step 1: In a shell on the surface.
+# Step 2: Filling the inside.
+
+# You should only really need to change the AXES to what you want.
 # If funky results, enable save_visualization. Written as series of frames for paraview.
 
+# With the current configuration 99% of the calculation time is spent making sure the max nr of particles is approached slowly.
+# The surface more so than the inside. Even so, *no guarantee at all* that it finds the best nr.
+# If you don't care much about having the highest possible density, you can massively reduce the time this takes.
+# Gotta mess with the parameters yourself.
+
+# TODO I am sure there easily are better starting configurations / lower bounds for initial particle nr than what I am doing.
+# I am guilty of "Just throw compute at it over night."
+
+#############################################################################################################################
 #############################################################################################################################
 # region: Import
 
+import os
+import sys
 from pathlib import Path
 
 import espressomd
@@ -26,14 +42,42 @@ espressomd.assert_features(
         "EXTERNAL_FORCES",
         "MASS",
         "VIRTUAL_SITES_RELATIVE",
-        "LENNARD_JONES",
+        "LENNARD_JONES"
     ]
 )
+# endregion
+# region: User input
 
+# Redefining print to only obtain barebones output when DEBUG = FALSE
+# Also enables absolute cut off points when itteration nr reached
+DEBUG = True  # toggle this
+
+
+def print(*args, override=False, **kwargs):
+    if DEBUG or override:
+        __builtins__.print(*args, **kwargs)
+
+# Define the semi-axes of the ellipsoid. [a, b, b]
+# Only Spheroids a != b = c, because otherwise the resetting to surface breaks, I think.
+# Run time consideration: 5,5,5 took ~4h. 3,2,2 10min
+
+
+# for running from outside with args if you want several geometries cued up with cue_AXES.py
+a = float(sys.argv[1])
+b = float(sys.argv[2])
+
+# Manual
+# a = 3
+# b = 2
+
+
+# Writes vtk animation frames of the shell process and inner process, doesn't hamper performance much at all
+save_visualization = True
 # endregion
 
 #############################################################################################################################
 # region: Numba setup
+
 
 # Numba achieves a 20x speed up the way I set it up and it only eats ~34% of my cpu vs 25% before.
 numba.set_num_threads(4)  # or the number of cores you want
@@ -81,23 +125,12 @@ time_step = 0.001
 eps_ss = 1  # LJ epsilon
 sig_ss = 1  # LJ sigma
 
-# Define the semi-axes of the ellipsoid.
-# Only Spheroids a != b = c, because otherwise the resetting to surface breaks, I think.
 
-# for running from outside with args if you want several geometries cued up
-import sys
-a = float(sys.argv[1])
-b = float(sys.argv[2])
-print(a,b)
-
-# a = 2
-# b = 2
 AXES = np.array(
     [a, b, b]
 )
 radius_col = max(AXES)
 
-save_visualization = False
 # endregion
 
 #############################################################################################################################
@@ -121,7 +154,7 @@ print("Seed Pass: ", seed_pass)
 system.thermostat.set_langevin(kT=0.001, gamma=40.0, seed=seed_pass)
 
 print(LINE)
-print("# Creating raspberry")
+print("# Creating raspberry", AXES, override=True)
 center = system.box_l / 2
 colPos = (0, 0, 0)
 
@@ -164,6 +197,7 @@ for i in range(1, n_surface_part + 1):
 
 # Empty folder for recording frames for Paraview
 if save_visualization:
+    os.makedirs("data/vtk_frames/shell_animation", exist_ok=True)
     folder_path = Path("data/vtk_frames/shell_animation")
     for item in folder_path.iterdir():
         if item.is_file():
@@ -195,6 +229,15 @@ phase_duration = 10  # duration of high temperature state (* check_nth)
 
 while True:
 
+    if DEBUG and k == 1000:
+        print(LINE)
+        print(LINE)
+        print("DEBUG BREAK")
+        print(LINE)
+        print(LINE)
+
+        break
+
     system.integrator.run(1)
 
     # now put all particles back on the surface
@@ -208,10 +251,6 @@ while True:
         if save_visualization:
             writevtk(
                 f"data/vtk_frames/shell_animation/frame_{int(k/nth_step_recorded)}.vtk", system)
-
-    # Early exit condition for trials
-    # if k == 1000: 
-    #     break
 
     k += 1
     if not k % check_nth:
@@ -234,9 +273,11 @@ while True:
                 t_counter += 1
 
         # Calculate metrics
-        mean, std, smallest = mean_std_smallest(system.part.select(type=1).id, system)
+        mean, std, smallest = mean_std_smallest(
+            system.part.select(type=1).id, system)
         rel_mean = abs(high_score_mean-mean)/(1-high_score_mean)
-        rel_smallest = abs(high_score_smallest-smallest) / (1-high_score_smallest)
+        rel_smallest = abs(high_score_smallest-smallest) / \
+            (1-high_score_smallest)
 
         # Record history for plot
         if not k % 100:
@@ -320,7 +361,7 @@ while True:
 
 print(LINE)
 print("Relaxation steps taken: ", k)
-print("Time: ", time.time() - t0)
+print("Time for shell: ", time.time() - t0, override=True)
 
 # Restore low temperature regime
 system.thermostat.set_langevin(kT=0.001, gamma=40.0, seed=seed_pass)
@@ -339,7 +380,7 @@ if save_visualization:
 
 # Select the desired implementation for virtual sites
 system.virtual_sites = VirtualSitesRelative()
-# min_global_cut needs to be bigger than all virtual bond lengths 
+# min_global_cut needs to be bigger than all virtual bond lengths
 system.min_global_cut = radius_col
 
 # Calculate the center of mass position (com) and the moment of inertia (momI) of the colloid
@@ -421,10 +462,13 @@ t0 = time.time()
 
 # Empty folder for recording frames for Paraview
 if save_visualization:
+    os.makedirs("data/vtk_frames/inside_animation", exist_ok=True)
     folder_path = Path("data/vtk_frames/inside_animation")
     for item in folder_path.iterdir():
         if item.is_file():
             item.unlink()
+
+k = 0
 
 c_counter = 0
 t_counter = 0
@@ -433,6 +477,14 @@ forces = []
 second_stage = False
 phase_duration = 300
 while True:
+    if DEBUG and k == 1000:
+        print(LINE)
+        print(LINE)
+        print("DEBUG BREAK")
+        print(LINE)
+        print(LINE)
+        break
+
     system.integrator.run(1)
 
     # Disable thermal kick
@@ -474,7 +526,7 @@ while True:
         if save_visualization:
             writevtk(f"data/vtk_frames/inside_animation/inside{k}.vtk", system)
             forces.append(max([np.linalg.norm(part.f)
-                        for part in system.part.select(type=2)]))
+                               for part in system.part.select(type=2)]))
 
     # Remove all particles outside and transition to second stage
     if k % 100 == 0 and not second_stage:
@@ -515,7 +567,7 @@ if save_visualization:
     plt.savefig("data/max_forces.png")
 
 print("Relaxation steps taken: ", k)
-print("Time: ", time.time() - t0)
+print("Time for inside: ", time.time() - t0, override=True)
 
 print(LINE)
 print("Shell particles: ", len(system.part.select(type=1)))
@@ -528,10 +580,14 @@ print("Steps taken: ", k)
 # region: Output
 
 # write coordinates to textfile
+print(str(AXES).replace(" ", "_"))
 filename = "data/raspberry_coordinates" + str(AXES).replace(" ", "_") + ".txt"
 
+filename = filename.replace(f"._", f".0_")
+filename = filename.replace(f".]", f".0]")
+
 positions = []
-for x in system.part:
+for part in system.part:
     # Except central particle
     if not part.id:
         continue

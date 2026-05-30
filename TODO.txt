@@ -1,13 +1,7 @@
-# TODO add to devcontainer on PC
-# "customizations": {
-#     "vscode": {
-#         "settings": {
-#         "python.defaultInterpreterPath": "/home/xeranes/espresso/build/pypresso"
-#         },
-#         "extensions": [
-#         "ms-python.python"
-#         ]
-#     }
-# }
-
+Make an actual square grid (trinagle) of combination of values and not the mumbo jumbo it is now
 _________________________________________________________--
+
+
+The dockerfile currently clones from stekajack andrey egg config. bla. make own one.
+
+simulation config features.
