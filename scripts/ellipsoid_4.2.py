@@ -26,7 +26,6 @@ import sys
 from pathlib import Path
 
 import espressomd
-from espressomd.virtual_sites import VirtualSitesRelative
 
 import time
 import numba
@@ -45,6 +44,7 @@ espressomd.assert_features(
         "LENNARD_JONES"
     ]
 )
+
 # endregion
 # region: User input
 
@@ -63,12 +63,12 @@ def print(*args, override=False, **kwargs):
 
 
 # for running from outside with args if you want several geometries cued up with cue_AXES.py
-a = float(sys.argv[1])
-b = float(sys.argv[2])
+# a = float(sys.argv[1])
+# b = float(sys.argv[2])
 
 # Manual
-# a = 3
-# b = 2
+a = 3.1
+b = 2
 
 
 # Writes vtk animation frames of the shell process and inner process, doesn't hamper performance much at all
@@ -147,7 +147,7 @@ system.non_bonded_inter[1, 1].lennard_jones.set_params(
 )
 
 # Seed
-seed_pass = np.random.randint(0, 2**32 - 1)
+seed_pass = np.random.randint(0, 2**16 - 1)
 print("Seed Pass: ", seed_pass)
 
 # Going to even lower temp regime 0.00001 might make sense, but this seems to function well
@@ -160,7 +160,7 @@ colPos = (0, 0, 0)
 
 # Place the central particle
 system.part.add(id=0, pos=colPos, type=0, fix=(
-    True, True, True), rotation=(1, 1, 1))
+    True, True, True), rotation=(True, True, True))
 
 # endregion
 
@@ -378,8 +378,6 @@ if save_visualization:
 #############################################################################################################################
 # region: Virtual sites
 
-# Select the desired implementation for virtual sites
-system.virtual_sites = VirtualSitesRelative()
 # min_global_cut needs to be bigger than all virtual bond lengths
 system.min_global_cut = radius_col
 
@@ -452,8 +450,8 @@ for pos in arr_of_points:
 system.force_cap = 100
 
 system.part.by_id(0).pos = center
-system.part.by_id(0).fix = [1, 1, 1]
-system.part.by_id(0).rotation = [0, 0, 0]
+system.part.by_id(0).fix = [True, True, True]
+system.part.by_id(0).rotation = [False, False, False]
 
 
 print("Relaxation of the filling particles")

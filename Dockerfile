@@ -1,5 +1,9 @@
 # Base image
-FROM nvidia/cuda:12.3.0-devel-ubuntu22.04
+
+### Switch
+FROM ubuntu:24.04
+# FROM nvidia/cuda:12.6.3-devel-ubuntu24.04
+###
 
 # Set non-interactive frontend to suppress prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -14,7 +18,7 @@ RUN apt-get update && \
     python3-pip \
     openmpi-bin \
     libboost-all-dev \
-    fftw3-dev \
+    libfftw3-dev \
     libfftw3-mpi-dev \
     git && \
     apt-get clean && \
@@ -40,20 +44,20 @@ RUN pip install --no-cache-dir \
     numba
 
 # Clone the custom Espresso repository
-RUN git clone --branch 5.0 --depth 1 https://github.com/espressomd/espresso && mkdir build_ellipsoid && mkdir build
+RUN git clone --branch 5.0 --depth 1 https://github.com/espressomd/espresso && mkdir build
 
-COPY configs/myconfig_ellipsoid.hpp /home/xeranes/espresso/build_ellipsoid/myconfig.hpp
-COPY configs/myconfig_simulation.hpp /home/xeranes/espresso/build/myconfig.hpp
-
-# Build Ellipsoid - is minimal
-WORKDIR /home/xeranes/espresso/build_ellipsoid
+# Build Espresso
+### Switch
+COPY configs/myconfig_ellipsoid.hpp /home/xeranes/espresso/build/myconfig.hpp
+WORKDIR /home/xeranes/espresso/build
 RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=OFF && \
     make
 
-# Build Espresso
-WORKDIR /home/xeranes/espresso/build
-RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=ON -D ESPRESSO_BUILD_WITH_WALBERLA=ON && \
-    make
+# COPY configs/myconfig_simulation.hpp /home/xeranes/espresso/build/myconfig.hpp
+# WORKDIR /home/xeranes/espresso/build
+# RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=ON -D ESPRESSO_BUILD_WITH_WALBERLA=ON -D ESPRESSO_BUILD_WITH_FFTW=ON && \
+#     make
+###
 
 # Cleanup
 RUN rm -rf /var/cache/* /tmp/* /var/log/* /usr/share/doc/*
@@ -62,12 +66,12 @@ RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 # TODO !!!
 # Set environment variables for Espresso
 ENV PYTHONPATH="/home/xeranes/espresso/build/src/python"
-# ENV ESPRESSOPATH="/home/xeranes/espresso/build/"
+ENV ESPRESSOPATH="/home/xeranes/espresso/build/"
 ENV OMPI_ALLOW_RUN_AS_ROOT=1
 ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 # (Optional) Append environment settings to the bashrc
-# RUN echo 'export ESPRESSOPATH="/home/xeranes/espresso/build/"' >> /home/xeranes/.bashrc
+RUN echo 'export ESPRESSOPATH="/home/xeranes/espresso/build/"' >> /home/xeranes/.bashrc
 
 # Keep the container running
 ENTRYPOINT ["/bin/bash", "-c", "tail -f /dev/null"]
