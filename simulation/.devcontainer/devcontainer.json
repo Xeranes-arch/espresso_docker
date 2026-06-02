@@ -1,0 +1,34 @@
+{
+  "name": "ESPResSo",
+  "dockerFile": "../Dockerfile",
+  "runArgs": [
+    "--gpus",
+    "all"
+  ],
+  "mounts": [
+    // Linux
+    // "source=home/kleef/espresso_docker/data,target=/home/xeranes/DATA,type=bind",
+    // "source=home/kleef/espresso_docker/scripts,target=/home/xeranes/SCRIPTS,type=bind",
+    // Windows
+    "source=C:/Users/Xeranes/espresso_docker/_data,target=/home/xeranes/DATA,type=bind",
+    "source=C:/Users/Xeranes/espresso_docker/_scripts,target=/home/xeranes/SCRIPTS,type=bind"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11",
+      "installJupyterlab": true
+    }
+  },
+  "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspace,type=bind",
+  "workspaceFolder": "/workspace/geometry",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/home/xeranes/espresso/build/pypresso"
+      },
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
+  }
+}

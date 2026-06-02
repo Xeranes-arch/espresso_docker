@@ -1,4 +1,5 @@
 
+
 /* Generic features */
 // #define EXTERNAL_FORCES
 #define MASS
@@ -9,6 +10,7 @@
 // #define NPT
 // #define ENGINE
 // #define PARTICLE_ANISOTROPY
+// #define H5MD
 
 /* Rotation */
 #define ROTATION
@@ -16,27 +18,23 @@
 
 /* Electrostatics */
 // #define ELECTROSTATICS
-// #define MMM1D_GPU
-// #define MMM1D_MACHINE_PREC
 
 /* Magnetostatics */
 #define DIPOLES
+// #define DIPOLE_FIELD_TRACKING
+// #define THERMAL_STONER_WOHLFARTH
 
 /* Virtual sites features */
 // #define VIRTUAL_SITES
 #define VIRTUAL_SITES_RELATIVE
+// #define VIRTUAL_SITES_CENTER_OF_MASS
 // #define VIRTUAL_SITES_INERTIALESS_TRACERS
 
 /* DPD features */
 // #define DPD
 
 /* Lattice-Boltzmann features */
-// #define LB_BOUNDARIES
-#define LB_BOUNDARIES_GPU
 // #define LB_ELECTROHYDRODYNAMICS
-// #define ELECTROKINETICS
-// #define EK_BOUNDARIES
-// #define EK_DEBUG
 
 /* Interaction features */
 // #define TABULATED

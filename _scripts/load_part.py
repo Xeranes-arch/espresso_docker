@@ -10,7 +10,7 @@ AXES_list = [[3., 1.5, 1.5], [2, 2, 2]]
 particles = []
 for AX in AXES_list:
     end_str = f"{float(AX[0])}_{float(AX[1])}_{float(AX[2])}"
-    filename = f"/workspaces/espresso_docker/data/raspberry_coordinates[{end_str}].txt"
+    filename = f"/workspaces/espresso_docker/_data/raspberry_coordinates[{end_str}].txt"
 
     print(LINE)
     print(f"Loading: {end_str}")

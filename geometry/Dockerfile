@@ -1,8 +1,8 @@
 # Base image
 
 ### Switch
-# FROM ubuntu:24.04
-FROM nvidia/cuda:12.6.3-devel-ubuntu24.04
+FROM ubuntu:24.04
+# FROM nvidia/cuda:12.6.3-devel-ubuntu24.04
 ###
 
 # Set non-interactive frontend to suppress prompts
@@ -48,16 +48,10 @@ RUN git clone --branch 5.0 --depth 1 https://github.com/espressomd/espresso && m
 
 # Build Espresso
 ### Switch
-# COPY configs/myconfig_ellipsoid.hpp /home/xeranes/espresso/build/myconfig.hpp
-# WORKDIR /home/xeranes/espresso/build
-# RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=OFF && \
-#     make
-
-COPY configs/myconfig_simulation.hpp /home/xeranes/espresso/build/myconfig.hpp
+COPY myconfig_ellipsoid.hpp /home/xeranes/espresso/build/myconfig.hpp
 WORKDIR /home/xeranes/espresso/build
-RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=ON -D ESPRESSO_BUILD_WITH_WALBERLA=ON -D ESPRESSO_BUILD_WITH_FFTW=ON && \
+RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=OFF && \
     make
-###
 
 # Cleanup
 RUN rm -rf /var/cache/* /tmp/* /var/log/* /usr/share/doc/*
