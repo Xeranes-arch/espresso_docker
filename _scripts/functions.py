@@ -2,6 +2,23 @@ from numba import njit, prange
 import numpy as np
 from itertools import combinations
 
+
+def rq(num_quaternions: int = 1) -> np.ndarray:
+    """
+    Generates uniform random quaternions using normalized Gaussians.
+    Returns an array of shape (num_quaternions, 4) in (w, x, y, z) format.
+    """
+    q = np.random.normal(size=4)
+    norm = np.linalg.norm(q, keepdims=True)
+
+    # Normalize to project onto the unit hypersphere
+    return q / norm
+
+
+def rpos(box_l):
+    return np.random.uniform(0.0, box_l, size=3)
+
+
 def writevtk(path, system, types=None):
     """Custom writevtk that further handles the file made by espresso"""
     # call original function

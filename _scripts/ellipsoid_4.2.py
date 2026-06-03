@@ -50,7 +50,7 @@ espressomd.assert_features(
 
 # Redefining print to only obtain barebones output when DEBUG = FALSE
 # Also enables absolute cut off points when itteration nr reached
-DEBUG = True  # toggle this
+DEBUG = False  # toggle this
 
 
 def print(*args, override=False, **kwargs):
@@ -67,7 +67,7 @@ def print(*args, override=False, **kwargs):
 # b = float(sys.argv[2])
 
 # Manual
-a = 3.1
+a = 6
 b = 2
 
 

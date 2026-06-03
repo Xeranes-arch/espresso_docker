@@ -10,6 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update && \
+    apt-get install -y gcc-12 g++-12 libstdc++-12-dev && \
     apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -55,8 +56,16 @@ RUN git clone --branch 5.0 --depth 1 https://github.com/espressomd/espresso && m
 
 COPY myconfig_simulation.hpp /home/xeranes/espresso/build/myconfig.hpp
 WORKDIR /home/xeranes/espresso/build
-RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=ON -D ESPRESSO_BUILD_WITH_WALBERLA=ON -D ESPRESSO_BUILD_WITH_FFTW=ON && \
-    make
+# RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=ON -D ESPRESSO_BUILD_WITH_WALBERLA=ON -D ESPRESSO_BUILD_WITH_FFTW=ON && \
+#     make
+
+RUN CC=gcc-12 CXX=g++-12 CUDACXX=/usr/lib/nvidia-cuda-toolkit/bin/nvcc cmake .. \
+  -D ESPRESSO_BUILD_WITH_CUDA=ON \
+  -D CUDAToolkit_ROOT=/usr/lib/nvidia-cuda-toolkit \
+  -D CMAKE_CUDA_HOST_COMPILER=g++-12 \
+  -D ESPRESSO_BUILD_WITH_WALBERLA=ON \
+  -D ESPRESSO_BUILD_WITH_FFTW=ON && \
+  make
 ###
 
 # Cleanup
