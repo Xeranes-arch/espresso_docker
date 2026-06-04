@@ -3,23 +3,23 @@ import numpy as np
 from itertools import combinations
 
 
-def rq(num_quaternions: int = 1) -> np.ndarray:
-    """
-    Generates uniform random quaternions using normalized Gaussians.
-    Returns an array of shape (num_quaternions, 4) in (w, x, y, z) format.
-    """
+def rq():
     q = np.random.normal(size=4)
     norm = np.linalg.norm(q, keepdims=True)
-
-    # Normalize to project onto the unit hypersphere
     return q / norm
+
+
+def rv():
+    q = rq()
+    norm = np.linalg.norm(q[1:])
+    return q[1:]/norm
 
 
 def rpos(box_l):
     return np.random.uniform(0.0, box_l, size=3)
 
 
-def writevtk(path, system, types=None):
+def writevtk(path, system, types=None, mag=False):
     """Custom writevtk that further handles the file made by espresso"""
     # call original function
     if types:
@@ -52,6 +52,14 @@ def writevtk(path, system, types=None):
 
     with open(path, "w") as f:
         f.writelines(out)
+
+    if mag:
+        out.append("\nVECTORS mag float")
+        for part in system.part.all():
+            v_str = " ".join(map(str, part.dip))
+            out.append(f"\n{v_str}")
+        with open(path, "w") as f:
+            f.writelines(out)
 
 
 def ell_surface_area(axes):
@@ -164,8 +172,11 @@ def get_surface_position_numba(t, axes, position):
 
 
 @njit(parallel=True)
-def shift_particle(particle_positions, axes):
-    """Moves particle to nearest surface position"""
+def shift_particle(particle_positions, axes, if_outside=False):
+    """
+    Moves particle to nearest surface position.
+    Only works centered around 0,0,0
+    """
     new_poss = np.zeros_like(particle_positions)
     for i in prange(len(particle_positions)):
         pos = particle_positions[i]
@@ -177,8 +188,17 @@ def shift_particle(particle_positions, axes):
         # Find the exact point within tolerance
         root = bisect_numba(l_limit, u_limit, axes, pos)
 
+        new_pos_candidate = get_surface_position_numba(root, axes, pos)
+
         # Reposition particle there
-        new_poss[i] = get_surface_position_numba(root, axes, pos)
+        if if_outside:
+            if np.linalg.norm(new_pos_candidate) < np.linalg.norm(pos):
+                new_poss[i] = new_pos_candidate
+            else:
+                new_poss[i] = pos
+        else:
+            new_poss[i] = new_pos_candidate
+
     return new_poss
 
 
@@ -208,50 +228,102 @@ def hex_grid_2d(xmin, xmax, ymin, ymax, spacing):
     return np.array(points)
 
 
-def hex_ellipsoid_points(a, b, c, box_l, spacing=1.0):
-    """
-    Generates HCP (ABAB) packed points inside ellipsoid:
-        x^2/a^2 + y^2/b^2 + z^2/c^2 <= 1
-    """
-
+def hex_ellipsoid_points(a, b, c, spacing=1, offset_from_000=None):
     dx = spacing
     dy = np.sqrt(3) * spacing / 2
     dz = np.sqrt(2/3) * spacing
 
-    xmin, xmax = -a, a
-    ymin, ymax = -b, b
-    zmin, zmax = -c, c
+    # Define a proper 3D translation vector from your parameter
+    # If offset_from_000 is a single number, we treat it as an [X, Y, Z] shift
+    if offset_from_000 is not None:
+        # Match your original logic of shifting by offset/2
+        shift_vector = np.array(
+            [offset_from_000/2, offset_from_000/2, offset_from_000/2])
+    else:
+        shift_vector = np.array([0.0, 0.0, 0.0])
+
+    # To ensure we don't clip the edges, expand search bounds by the shift magnitude
+    max_shift = int(np.ceil(np.max(np.abs(shift_vector)) / dz))
+    z_max_idx = int(np.ceil(c / dz)) + max_shift
+    y_max_idx = int(np.ceil(b / dy)) + max_shift
+    x_max_idx = int(np.ceil(a / dx)) + max_shift
 
     points = []
 
-    shift = (dx / 2, dy / 3)  # B-layer shift in XY
+    for iz in range(-z_max_idx, z_max_idx + 1):
+        z_grid = iz * dz
+        is_b_layer = (iz % 2 != 0)
 
-    jz = 0
-    z = zmin
+        for iy in range(-y_max_idx, y_max_idx + 1):
+            y_grid = iy * dy + (dy / 3.0 if is_b_layer else 0.0)
 
-    while z <= zmax:
+            for ix in range(-x_max_idx - 2, x_max_idx + 3):
+                row_toggle = (iy % 2 != 0)
+                x_shift = (dx / 2.0 if row_toggle else 0.0) + \
+                    (dx / 2.0 if is_b_layer else 0.0)
+                x_grid = ix * dx + x_shift
 
-        # decide layer type
-        if jz % 2 == 0:
-            ox, oy = 0.0, 0.0   # A layer
-        else:
-            ox, oy = shift      # B layer
+                # Apply the spatial translation to get the actual point position
+                x = x_grid + shift_vector[0]
+                y = y_grid + shift_vector[1]
+                z = z_grid + shift_vector[2]
 
-        j = 0
-        y = ymin
-
-        while y <= ymax:
-            x = xmin + (j % 2) * dx / 2 + ox
-
-            while x <= xmax:
-                if (x*x)/(a*a) + (y*y)/(b*b) + (z*z)/(c*c) <= 1.0:
-                    points.append((x+box_l/2, y+box_l/2, z+box_l/2))
-                x += dx
-
-            y += dy
-            j += 1
-
-        z += dz
-        jz += 1
+                # CRITICAL: The boundary check must use the actual final coordinates
+                # if the ellipsoid itself is sitting at (0,0,0)
+                if (x**2 / a**2) + (y**2 / b**2) + (z**2 / c**2) <= 1.0:
+                    points.append((x, y, z))
 
     return np.array(points)
+
+# def hex_ellipsoid_points(a, b, c, offset_from_000=None, spacing=1.0):
+#     """
+#     Generates HCP (ABAB) packed points inside ellipsoid:
+#         x^2/a^2 + y^2/b^2 + z^2/c^2 <= 1
+#     """
+
+#     dx = spacing
+#     dy = np.sqrt(3) * spacing / 2
+#     dz = np.sqrt(2/3) * spacing
+
+#     xmin, xmax = -a, a
+#     ymin, ymax = -b, b
+#     zmin, zmax = -c, c
+
+#     points = []
+
+#     shift = (dx / 2, dy / 3)  # B-layer shift in XY
+
+#     jz = 0
+#     z = zmin
+
+#     while z <= zmax:
+
+#         # decide layer type
+#         if jz % 2 == 0:
+#             ox, oy = 0.0, 0.0   # A layer
+#         else:
+#             ox, oy = shift      # B layer
+
+#         j = 0
+#         y = ymin
+
+#         while y <= ymax:
+#             x = xmin + (j % 2) * dx / 2 + ox
+
+#             while x <= xmax:
+#                 if (x*x)/(a*a) + (y*y)/(b*b) + (z*z)/(c*c) <= 1.0:
+#                     if offset_from_000:
+#                         points.append(
+#                             (x+offset_from_000/2, y+offset_from_000/2, z+offset_from_000/2))
+#                     else:
+#                         points.append((x, y, z))
+
+#                 x += dx
+
+#             y += dy
+#             j += 1
+
+#         z += dz
+#         jz += 1
+
+#     return np.array(points)
