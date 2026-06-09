@@ -16,13 +16,13 @@ Propagation = espressomd.propagation.Propagation
 
 ################
 
-vis = False
+vis = True
 
-ratio = float(sys.argv[1])
-ani = float(sys.argv[2])
+# ratio = float(sys.argv[1])
+# ani = float(sys.argv[2])
 
-# ratio = 2
-# ani = 3.
+ratio = 6.
+ani = 3.
 
 ################
 
@@ -67,7 +67,12 @@ for pos in pos_arr:
     p2.vs_auto_relate_to(p1)
     p2.propagation = Propagation.TRANS_VS_RELATIVE | Propagation.ROT_VS_INDEPENDENT
 
-alphas = [0, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10, 12.5, 15]
+alphas = [8]
+
+# alphas1 = np.arange(0, 8, 0.25)
+# alphas2 = np.arange(8, 15.1, 0.5)
+# alphas = np.concatenate((alphas1, alphas2))
+
 dipms_list = []
 for alpha in alphas:
     # set magnetic field constraint
@@ -127,10 +132,5 @@ if vis:
     plt.savefig("target_graph.png")
 
 
-np.savez(f"_data/mag_response/mag_response_data_ratio{ratio}_ani{ani}.npz",
+np.savez(f"_data/mag_response/DEMO_mag_response_data_ratio{ratio}_ani{ani}.npz",
          ani=ani, alphas=alphas, dipm_means=dipm_means, stds=stds)
-
-# --- How to load it back ---
-# loaded = np.load("my_data.npz")
-# print(loaded["array1"])  # Access by the key you assigned
-# print(loaded["tags"])
