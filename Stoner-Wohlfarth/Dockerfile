@@ -47,7 +47,7 @@ RUN pip install --no-cache-dir \
 RUN git clone --branch 5.0 --depth 1 https://github.com/espressomd/espresso && mkdir build
 
 # Build Espresso
-COPY myconfig_simulation.hpp /home/xeranes/espresso/build/myconfig.hpp
+COPY myconfig_SW.hpp /home/xeranes/espresso/build/myconfig.hpp
 WORKDIR /home/xeranes/espresso/build
 RUN cmake .. -D ESPRESSO_BUILD_WITH_NLOPT=ON && make
 

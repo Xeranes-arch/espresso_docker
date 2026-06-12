@@ -3,24 +3,27 @@ import matplotlib.pyplot as plt
 
 
 ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
-anis = ["3.0"]
+anis = ["0.0", "0.5", "1.0", "2.0", "3.0"]
 
 ratios = ["2.0"]
-anis = ["2.0", "3.0"]
+# anis = ["2.0", "3.0"]
 
 fig, ax = plt.subplots(figsize=(10, 6))
 
 for ratio in ratios:
-    for c, ani in zip(["black", "red"], anis):
-        loaded = np.load(
-            f"/workspace/_data/mag_response/fg_mag_response_data_ratio{ratio}_ani{ani}.npz")
+    for ani in anis:
+        if float(ani) in [0, 0.5, 1]:
+            var = "fglim_"
+        else:
+            var = "fg_"
+        filename = f"/workspace/_data/mag_response/{var}mag_response_data_ratio{ratio}_ani{ani}.npz"
+        loaded = np.load(filename)
+
+        print("\n", filename)
 
         dipm_means = np.array(loaded["dipm_means"])
         stds = np.array(loaded["stds"])
-
-        alphas1 = np.arange(0, 8, 0.25)
-        alphas2 = np.arange(8, 15.1, 0.5)
-        alphas = np.concatenate((alphas1, alphas2))
+        alphas = np.array(loaded["alphas"])
 
         ax.errorbar(
             alphas,
@@ -40,7 +43,7 @@ for ratio in ratios:
 # plt.xlim(0.9, 5)
 # plt.ylim(0.4, 0.9)
 
-plt.xlim(-0.5, 15.2)
+plt.xlim(-0.5, 5.2)
 plt.ylim(-0.1, 1.1)
 
 plt.legend()

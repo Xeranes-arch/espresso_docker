@@ -1,11 +1,12 @@
 import subprocess
 
-anis = [2, 3]
-nrs = [2, 3, 4, 5, 6]
+anis = [0.0, 0.5, 1]
+ratios = [2., 6.]
+
 params = []
 for ani in anis:
-    for val in nrs:
-        params.append([val, ani])
+    for ratio in ratios:
+        params.append([ratio, ani])
 
 # print(params)
 

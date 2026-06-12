@@ -21,8 +21,20 @@ vis = True
 # ratio = float(sys.argv[1])
 # ani = float(sys.argv[2])
 
-ratio = 6.
-ani = 3.
+ratio = 2.
+ani = 1.
+
+# og
+alphas = [1.]
+
+# fg
+# alphas1 = np.arange(0, 8, 0.25)
+# alphas2 = np.arange(8, 15.1, 0.5)
+# alphas = np.concatenate((alphas1, alphas2))
+
+# fglim
+# alphas = np.arange(0, 5.1, 0.25)
+
 
 ################
 
@@ -31,7 +43,6 @@ print(f"Running ratio:{ratio}, ani:{ani}")
 
 kT = 1
 mu_0 = 1
-alpha = 1
 
 system = espressomd.System(box_l=[90.0, 90.0, 90.0])
 system.time_step = 0.001  # MD time step in simulation units
@@ -67,12 +78,6 @@ for pos in pos_arr:
     p2.vs_auto_relate_to(p1)
     p2.propagation = Propagation.TRANS_VS_RELATIVE | Propagation.ROT_VS_INDEPENDENT
 
-alphas = [8]
-
-# alphas1 = np.arange(0, 8, 0.25)
-# alphas2 = np.arange(8, 15.1, 0.5)
-# alphas = np.concatenate((alphas1, alphas2))
-
 dipms_list = []
 for alpha in alphas:
     # set magnetic field constraint
@@ -96,7 +101,7 @@ for alpha in alphas:
     dipms = []
     system.integrator.run(1000)
     for i in tqdm.tqdm(range(1000)):
-        system.integrator.run(10)
+        system.integrator.run(1)
         if vis:
             writevtk(
                 f"_data/vtk_frames/mag_response/alpha{alpha}/mag{i}.vtk", system, mag=True)
@@ -105,10 +110,15 @@ for alpha in alphas:
     dipms_list.append(dipms)
     system.constraints.clear()
 
+    dipms = np.array(dipms_list)
+    stds = np.std(dipms, axis=1)
+    dipm_means = np.mean(dipms, axis=1)
 
-dipms = np.array(dipms_list)
-stds = np.std(dipms, axis=1)
-dipm_means = np.mean(dipms, axis=1)
+    # np.savez(f"_data/mag_response/mag_response_data_ratio{ratio}_ani{ani}.npz",
+    #          ani=ani, alphas=alphas, dipm_means=dipm_means, stds=stds)
+
+    # np.savez(f"_data/mag_response/fglim_mag_response_data_ratio{ratio}_anioff.npz",
+    #          alphas=alphas, dipm_means=dipm_means, stds=stds)
 
 if vis:
     plt.errorbar(
@@ -130,7 +140,3 @@ if vis:
     plt.xlabel("Magnetic field strength")
     plt.ylabel("M_z/(mu * N)")
     plt.savefig("target_graph.png")
-
-
-np.savez(f"_data/mag_response/DEMO_mag_response_data_ratio{ratio}_ani{ani}.npz",
-         ani=ani, alphas=alphas, dipm_means=dipm_means, stds=stds)
