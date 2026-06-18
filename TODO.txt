@@ -1,4 +1,2 @@
-Make an actual square grid (triangle) of combination of values and not the mumbo jumbo it is now
-_________________________________________________________--
-
+Add vtk to DEMO
 Rebuild simulation for gcc comp to nvcc

@@ -1,7 +1,8 @@
 import subprocess
 
-anis = [0.0, 0.5, 1]
-ratios = [2., 6.]
+
+ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
+anis = [100]
 
 params = []
 for ani in anis:
@@ -10,6 +11,6 @@ for ani in anis:
 
 # print(params)
 
-for (a, ani) in params:
+for (ratio, ani) in params:
     subprocess.run(["/home/xeranes/espresso/build/pypresso",
-                    "/workspace/_scripts/mag_response_ell.py", str(a), str(ani)], check=True)
+                    "/workspace/_scripts/mag_response_ell.py", str(float(ratio)), str(float(ani))], check=True)

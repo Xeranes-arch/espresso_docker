@@ -14,35 +14,71 @@ import espressomd.observables
 import espressomd.propagation
 Propagation = espressomd.propagation.Propagation
 
+# TODO put the dipoles back to all in x dir every reset?
 ################
 
-vis = True
+# vis = True
+vis = False
 
 # ratio = float(sys.argv[1])
-# ani = float(sys.argv[2])
+# KV = float(sys.argv[2])
 
 ratio = 2.
-ani = 1.
+KV = 100
 
-# og
-alphas = [1.]
+# Creates a nice exp spread of values
+# ulim_alphas = 100
+ulim_alphas = 150
+lin = np.linspace(80, ulim_alphas, 20, dtype=float)
+# alphas = [np.exp(i/ulim_alphas*5)-1 for i in lin]
+alphas = [np.exp(i/ulim_alphas*5)-1+80 for i in lin]
+maxv = max(alphas)
+alphas = [i/maxv*ulim_alphas for i in alphas]
+
+# plt.scatter(lin, alphas)
+# plt.savefig("plot.png")
+# exit()
 
 # fg
-# alphas1 = np.arange(0, 8, 0.25)
-# alphas2 = np.arange(8, 15.1, 0.5)
-# alphas = np.concatenate((alphas1, alphas2))
+# alphas = np.arange(0, 2, 0.5, dtype=float)
+# alphas = np.append(alphas, np.arange(2, 8, dtype=float))
+# alphas = np.append(alphas, np.arange(8, 15.1, 1.75, dtype=float))
 
 # fglim
 # alphas = np.arange(0, 5.1, 0.25)
 
+# alphas = [100]
+# ulim_alphas = max(alphas)
 
+ratio = float(ratio)
+KV = float(KV)
 ################
 
-print("_________________________________")
-print(f"Running ratio:{ratio}, ani:{ani}")
+LINE = "_________________________________"
+print(LINE)
+print(f"Running ratio:{ratio}, ani:{KV}")
 
+sigma = 1
 kT = 1
-mu_0 = 1
+mass = 1
+m = 1
+
+V = np.pi/6 * sigma**3
+M_s = m/V
+
+# DPDP
+# with
+mu_0 = 4 * np.pi
+# Lambda = 1 for m = 1
+Lambda = mu_0*m**2/(4*np.pi * sigma**3 * kT)
+
+# Zeeman
+alpha = 1
+H = alpha * kT / (mu_0 * m)
+
+# Anisotropy
+# KV = 3
+H_ani_inv = 1/(2*KV/(mu_0 * m))
 
 system = espressomd.System(box_l=[90.0, 90.0, 90.0])
 system.time_step = 0.001  # MD time step in simulation units
@@ -58,19 +94,19 @@ for pos in pos_arr:
     # One particle with thermal Stoner-Wohlfarth enabled
     p1 = system.part.add(pos=pos, fix=(True, True, True))
     p1.director = rv()  # easy axis direction
-    p1.rotation = (False, False, False)  # allow particle rotation
+    p1.rotation = (False, False, False)  # disallow particle rotation
 
     p2 = system.part.add(pos=p1.pos, fix=(True, True, True))
     # set dipole moment for the virtual particle in reduced units
-    p2.dip = (mu_0, 0, 0)
-    # disable rotations of the virtual site
+    p2.dip = (m, 0, 0)
+    # enable rotations of the virtual site
     p2.rotation = (True, True, True)
     p2.magnetodynamics = {
         'is_enabled': True,
-        # inverse anisotropy field (1/H_k) in reduced units WAS 1/10 of sat_mag... so maybe that? questionable what this does
-        'anisotropy_field_inv': 0.175,
-        'sat_mag': mu_0,  # saturation magnetisation in reduced units
-        'anisotropy_energy': ani,  # anisotropy energy K * V in reduced units
+        # inverse anisotropy field (1/H_k) in reduced units
+        'anisotropy_field_inv': H_ani_inv,
+        'sat_mag': M_s,  # saturation magnetisation in reduced units
+        'anisotropy_energy': KV,  # anisotropy energy K * V in reduced units !!!KV/kT > 3
         'sw_dt_incr': 1.0e-10,  # kinetic Monte Carlo time increment [s]
         'sw_tau0_inv': 1.0e9  # inverse attempt time (1/tau_0) [1/s]
     }
@@ -78,65 +114,80 @@ for pos in pos_arr:
     p2.vs_auto_relate_to(p1)
     p2.propagation = Propagation.TRANS_VS_RELATIVE | Propagation.ROT_VS_INDEPENDENT
 
-dipms_list = []
+# DP3M
+accuracy = 5E-4
+system.magnetostatics.solver = espressomd.magnetostatics.DipolarP3M(
+    accuracy=accuracy, prefactor=Lambda * sigma**3 * kT)
+
+# To be observed
+dipm_tot_z = espressomd.observables.MagneticDipoleMoment(
+    ids=system.part.all().id)
+
+d_alpha_dipms = []
 for alpha in alphas:
     # set magnetic field constraint
-    H_dipm = alpha * kT / mu_0
-    H_field = [0, 0, H_dipm]
-    H_constraint = espressomd.constraints.HomogeneousMagneticField(H=H_field)
+    H = alpha * kT / (mu_0 * m)
+    H_field = [0, 0, H]
+    H_constraint = espressomd.constraints.HomogeneousMagneticField(
+        H=H_field)
     system.constraints.add(H_constraint)
 
-    dipm_tot_z = espressomd.observables.MagneticDipoleMoment(
-        ids=system.part.all().id)
-
+    # Empty folder for recording frames for Paraview
     if vis:
-        # Empty folder for recording frames for Paraview
         os.makedirs(
-            f"_data/vtk_frames/mag_response/alpha{alpha}", exist_ok=True)
-        folder_path = Path(f"_data/vtk_frames/mag_response/alpha{alpha}")
+            f"_data/vtk_frames/mag_response/alpha{round(alpha, 2)}", exist_ok=True)
+        folder_path = Path(
+            f"_data/vtk_frames/mag_response/alpha{round(alpha, 2)}")
         for item in folder_path.iterdir():
             if item.is_file():
                 item.unlink()
 
-    dipms = []
-    system.integrator.run(1000)
+    # Equillibriate
+    print(LINE)
+    print("Equillibriating")
+    for i in tqdm.tqdm(range(1000)):
+        system.integrator.run(1)
+
+    # Run
+    print("Running system")
+    dipms_list = []
     for i in tqdm.tqdm(range(1000)):
         system.integrator.run(1)
         if vis:
             writevtk(
-                f"_data/vtk_frames/mag_response/alpha{alpha}/mag{i}.vtk", system, mag=True)
-        dipms.append(dipm_tot_z.calculate()[2]/mu_0/pos_arr.shape[0])
+                f"_data/vtk_frames/mag_response/alpha{round(alpha, 2)}/mag{i}.vtk", system, mag=True)
+        dipms_list.append(dipm_tot_z.calculate()[2]/M_s/pos_arr.shape[0])
 
-    dipms_list.append(dipms)
-    system.constraints.clear()
+    # Gather data
+    d_alpha_dipms.append(dipms_list)
 
-    dipms = np.array(dipms_list)
+    # Write to npz
+    dipms = np.array(d_alpha_dipms)
     stds = np.std(dipms, axis=1)
     dipm_means = np.mean(dipms, axis=1)
+    np.savez(f"_data/mag_response/mag_response_data_ratio{ratio}_ani{KV}.npz",
+             KV=KV, alphas=alphas, dipm_means=dipm_means, stds=stds)
 
-    # np.savez(f"_data/mag_response/mag_response_data_ratio{ratio}_ani{ani}.npz",
-    #          ani=ani, alphas=alphas, dipm_means=dipm_means, stds=stds)
+    # Reset System
+    system.constraints.clear()
 
-    # np.savez(f"_data/mag_response/fglim_mag_response_data_ratio{ratio}_anioff.npz",
-    #          alphas=alphas, dipm_means=dipm_means, stds=stds)
 
-if vis:
-    plt.errorbar(
-        alphas,
-        dipm_means,
-        yerr=stds,
-        fmt="-+",  # '+' means plus marker, no character after means NO line
-        color="black",  # Classic scientific black
-        ecolor="black",  # Error bar color matches
-        elinewidth=1,  # Thickness of error bars
-        capsize=4,  # Width of the horizontal caps
-        capthick=1,  # Thickness of the horizontal caps
-        markersize=8,  # Size of the plus marker
-        markeredgewidth=1.5,
-    )
+plt.errorbar(
+    alphas,
+    dipm_means,
+    yerr=stds,
+    fmt="-+",  # '+' means plus marker, no character after means NO line
+    # color="black",  # Classic scientific black
+    # ecolor="black",  # Error bar color matches
+    elinewidth=1,  # Thickness of error bars
+    capsize=4,  # Width of the horizontal caps
+    capthick=1,  # Thickness of the horizontal caps
+    markersize=8,  # Size of the plus marker
+    markeredgewidth=1.5,
+)
 
-    plt.xlim(-0.5, 15.2)
-    plt.ylim(-0.1, 1.1)
-    plt.xlabel("Magnetic field strength")
-    plt.ylabel("M_z/(mu * N)")
-    plt.savefig("target_graph.png")
+plt.xlim(-1, ulim_alphas + 1)
+plt.ylim(-0.1, 1.1)
+plt.xlabel(r"Magnetic field strength $\alpha$ in kT")
+plt.ylabel(r"$\langle M_z \rangle / M_{sat} N$")
+plt.savefig("target_graph.png")

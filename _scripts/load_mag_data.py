@@ -2,21 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
-anis = ["0.0", "0.5", "1.0", "2.0", "3.0"]
+# ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
+anis = [3, 4, 5, 10, 25, 50, 100]
+# anis = [10]
 
-ratios = ["2.0"]
+
+ratios = ["6.0"]
 # anis = ["2.0", "3.0"]
 
 fig, ax = plt.subplots(figsize=(10, 6))
 
 for ratio in ratios:
     for ani in anis:
-        if float(ani) in [0, 0.5, 1]:
-            var = "fglim_"
-        else:
-            var = "fg_"
-        filename = f"/workspace/_data/mag_response/{var}mag_response_data_ratio{ratio}_ani{ani}.npz"
+        filename = f"/workspace/_data/mag_response/mag_response_data_ratio{ratio}_ani{float(ani)}.npz"
         loaded = np.load(filename)
 
         print("\n", filename)
@@ -24,7 +22,6 @@ for ratio in ratios:
         dipm_means = np.array(loaded["dipm_means"])
         stds = np.array(loaded["stds"])
         alphas = np.array(loaded["alphas"])
-
         ax.errorbar(
             alphas,
             dipm_means,
@@ -43,10 +40,10 @@ for ratio in ratios:
 # plt.xlim(0.9, 5)
 # plt.ylim(0.4, 0.9)
 
-plt.xlim(-0.5, 5.2)
+plt.xlim(-0.5, max(alphas) + 1)
 plt.ylim(-0.1, 1.1)
 
 plt.legend()
-plt.xlabel("Magnetic field strength")
-plt.ylabel("M_z/(mu * N)")
+plt.xlabel(r"Magnetic field strength $\alpha$ in kT")
+plt.ylabel(r"$\langle M_z \rangle / M_{sat} N$")
 plt.savefig("target_graph.png")
