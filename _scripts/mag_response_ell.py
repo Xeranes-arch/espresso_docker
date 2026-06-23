@@ -14,24 +14,30 @@ import espressomd.observables
 import espressomd.propagation
 Propagation = espressomd.propagation.Propagation
 
-# TODO put the dipoles back to all in x dir every reset?
 ################
+
+sim_steps = 1000
+# sim_steps = 100
+
+equil_steps = 1000
+# equil_steps = 100
 
 # vis = True
 vis = False
 
-# ratio = float(sys.argv[1])
-# KV = float(sys.argv[2])
+ratio = float(sys.argv[1])
+KV = float(sys.argv[2])
 
-ratio = 2.
-KV = 100
+# ratio = 2.
+# KV = 3
 
 # Creates a nice exp spread of values
 # ulim_alphas = 100
-ulim_alphas = 150
-lin = np.linspace(80, ulim_alphas, 20, dtype=float)
-# alphas = [np.exp(i/ulim_alphas*5)-1 for i in lin]
-alphas = [np.exp(i/ulim_alphas*5)-1+80 for i in lin]
+ulim_alphas = 50
+lin = np.linspace(0, ulim_alphas, 20, dtype=float)
+# lin = np.linspace(0, ulim_alphas, 7, dtype=float)
+
+alphas = [np.exp(i/ulim_alphas*5)-1 for i in lin]
 maxv = max(alphas)
 alphas = [i/maxv*ulim_alphas for i in alphas]
 
@@ -125,12 +131,22 @@ dipm_tot_z = espressomd.observables.MagneticDipoleMoment(
 
 d_alpha_dipms = []
 for alpha in alphas:
+
     # set magnetic field constraint
     H = alpha * kT / (mu_0 * m)
     H_field = [0, 0, H]
     H_constraint = espressomd.constraints.HomogeneousMagneticField(
         H=H_field)
     system.constraints.add(H_constraint)
+
+    print(LINE)
+    print("Running:\n")
+    print("lambda = ", Lambda)
+    print(LINE)
+    print("Ratio: ", ratio)
+    print("KV = ", KV)
+    print(LINE)
+    print("alpha = ", alpha)
 
     # Empty folder for recording frames for Paraview
     if vis:
@@ -145,13 +161,14 @@ for alpha in alphas:
     # Equillibriate
     print(LINE)
     print("Equillibriating")
-    for i in tqdm.tqdm(range(1000)):
+    # for i in tqdm.tqdm(range(1000)):
+    for i in tqdm.tqdm(range(100)):
         system.integrator.run(1)
 
     # Run
     print("Running system")
     dipms_list = []
-    for i in tqdm.tqdm(range(1000)):
+    for i in tqdm.tqdm(range(sim_steps)):
         system.integrator.run(1)
         if vis:
             writevtk(
@@ -162,11 +179,13 @@ for alpha in alphas:
     d_alpha_dipms.append(dipms_list)
 
     # Write to npz
+    n_steps = sim_steps
     dipms = np.array(d_alpha_dipms)
     stds = np.std(dipms, axis=1)
     dipm_means = np.mean(dipms, axis=1)
+    print("Dipm_mean = ", dipm_means)
     np.savez(f"_data/mag_response/mag_response_data_ratio{ratio}_ani{KV}.npz",
-             KV=KV, alphas=alphas, dipm_means=dipm_means, stds=stds)
+             ratio=ratio, KV=KV, kT=kT, Lambda=Lambda, n_steps=n_steps, alphas=alphas, dipm_means=dipm_means, stds=stds)
 
     # Reset System
     system.constraints.clear()

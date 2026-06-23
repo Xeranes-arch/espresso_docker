@@ -2,13 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
-anis = [3, 4, 5, 10, 25, 50, 100]
-# anis = [10]
-
-
-ratios = ["6.0"]
-# anis = ["2.0", "3.0"]
+ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
+# ratios = ["2.0"]
+anis = [3, 4, 5, 6]
+# anis = [6]
+# anis = [3]
 
 fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -16,6 +14,11 @@ for ratio in ratios:
     for ani in anis:
         filename = f"/workspace/_data/mag_response/mag_response_data_ratio{ratio}_ani{float(ani)}.npz"
         loaded = np.load(filename)
+
+        # keys = list(loaded.keys())
+        # for key in keys:
+        #     print(key, loaded[key])
+        # exit()
 
         print("\n", filename)
 

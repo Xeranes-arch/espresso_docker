@@ -2,7 +2,7 @@ import subprocess
 
 
 ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
-anis = [100]
+anis = [3, 4, 5, 6]
 
 params = []
 for ani in anis:

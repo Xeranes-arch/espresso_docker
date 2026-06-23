@@ -9,13 +9,12 @@ from functions import rq
 
 LINE = "\n___________________________"
 
-AXES_list = [[3, 1.5, 1.5], [6, 2, 2], [3, 1.5, 1.5], [6, 2, 2],
-             [3, 1.5, 1.5], [6, 2, 2], [3, 1.5, 1.5], [6, 2, 2]]
+AXES_list = [[3, 1.5, 1.5]]
 
 particles = []
 for AX in AXES_list:
     end_str = f"{float(AX[0])}_{float(AX[1])}_{float(AX[2])}"
-    filename = f"/workspace/_data/raspberry_coordinates[{end_str}].txt"
+    filename = f"_data/coordinates/512_ratio_2.0_1.0.txt"
 
     print(LINE)
     print(f"Loading: {end_str}")
@@ -24,7 +23,7 @@ for AX in AXES_list:
 
 
 # size of the simulation box, arbitrary, should be larger than the raspberry...
-box_l = 25.0
+box_l = 90.0
 center = [box_l / 2 for _ in range(3)]
 
 skin = 0.4  # Skin parameter for the Verlet lists
@@ -49,10 +48,10 @@ system.periodicity = [True, True, True]
 center = system.box_l / 2
 
 # Lattice Boltzmann
-# lbf = espressomd.lb.LBFluid(
-#     agrid=1., density=1., kinematic_viscosity=1., tau=0.01, gpu=True)
-# system.lb = lbf
-# system.integrator.run(100)
+lbf = espressomd.lb.LBFluid(
+    agrid=1., density=1., kinematic_viscosity=1., tau=0.01, gpu=True)
+system.lb = lbf
+system.integrator.run(100)
 
 
 # the LJ potential (WCA potential)
@@ -91,7 +90,7 @@ for pos_arr in particles:
         )
         momIz += np.power(np.linalg.norm(com[:2] -
                                          system.part.by_id(id).pos[:2]), 2)
-    #################################
+    ################################
 
     system.part.add(id=smallest_id, pos=com, type=0,
                     rotation=[True, True, True])
