@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y gcc-12 g++-12 libstdc++-12-dev &&
+    apt-get install -y gcc-12 g++-12 libstdc++-12-dev && \
     apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -26,6 +26,20 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /home/xeranes
+
+# TRY DEFAULT GCC-12 ##############
+# Register gcc-12 and g++-12 with update-alternatives
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100 && \
+    update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-12 100 && \
+    update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-12 100
+
+# Set them as the active defaults
+RUN update-alternatives --set gcc /usr/bin/gcc-12 && \
+    update-alternatives --set g++ /usr/bin/g++-12 && \
+    update-alternatives --set cc /usr/bin/gcc-12 && \
+    update-alternatives --set c++ /usr/bin/g++-12
+###################################
 
 # Create and activate a virtual environment
 RUN python3 -m venv /home/xeranes/venv && \
@@ -48,25 +62,18 @@ RUN pip install --no-cache-dir \
 RUN git clone --branch 5.0 --depth 1 https://github.com/espressomd/espresso && mkdir build
 
 # Build Espresso
-### Switch
-# COPY configs/myconfig_ellipsoid.hpp /home/xeranes/espresso/build/myconfig.hpp
-# WORKDIR /home/xeranes/espresso/build
-# RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=OFF && \
-#     make
 
 COPY myconfig_simulation.hpp /home/xeranes/espresso/build/myconfig.hpp
 WORKDIR /home/xeranes/espresso/build
-# RUN cmake .. -D ESPRESSO_BUILD_WITH_CUDA=ON -D ESPRESSO_BUILD_WITH_WALBERLA=ON -D ESPRESSO_BUILD_WITH_FFTW=ON && \
-#     make
 
-RUN CC=gcc-12 CXX=g++-12 CUDACXX=/usr/lib/nvidia-cuda-toolkit/bin/nvcc cmake .. \
-  -D ESPRESSO_BUILD_WITH_CUDA=ON \
-  -D CUDAToolkit_ROOT=/usr/lib/nvidia-cuda-toolkit \
-  -D CMAKE_CUDA_HOST_COMPILER=g++-12 \
-  -D ESPRESSO_BUILD_WITH_WALBERLA=ON \
-  -D ESPRESSO_BUILD_WITH_FFTW=ON && \
-  make
-###
+RUN cmake .. \
+    -D ESPRESSO_BUILD_WITH_CUDA=ON \
+    -D CMAKE_CUDA_ARCHITECTURES=61 \
+    -D CUDAToolkit_ROOT=/usr/local/cuda \
+    -D CMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
+    -D ESPRESSO_BUILD_WITH_WALBERLA=ON \
+    -D ESPRESSO_BUILD_WITH_FFTW=ON && \
+    make
 
 # Cleanup
 RUN rm -rf /var/cache/* /tmp/* /var/log/* /usr/share/doc/*
