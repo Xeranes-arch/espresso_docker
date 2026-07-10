@@ -1,0 +1,143 @@
+\documentclass[12pt, DIV=12]{scrartcl}
+
+% Use the modern KOMA package for headers and footers
+\usepackage[automark, headsepline=0.4pt]{scrlayer-scrpage}
+
+\usepackage[utf8]{inputenc}      % SELBST HINZUGEFÜGT
+\usepackage{float}				 % Figure im Text verankern können
+\usepackage[pdftex]{graphics}    % Einbinden von Bildern 
+\usepackage{graphicx}            % Einbinden von Bildern (jpg)
+\usepackage{amsmath}             % Mathematical Society Package
+\usepackage[bf]{caption}         % Bildunterschriftenformatierung
+\usepackage{siunitx} 			 % SI Einheiten
+\usepackage{subcaption} % For subfigures
+
+
+
+\sisetup{separate-uncertainty=true,exponent-product = \cdot,} % durch diese Parameter wird bewirkt, dass Fehlerangaben in der von uns bevorzugten Weise erfolgen, also (Wert +- Fehler) Einheit
+
+\usepackage[automark, headsepline=0.4pt]{scrlayer-scrpage}	 % Spezielle Kopf- und Fußzeilen; automark=automatische Aktualisierung der Kapitel
+\usepackage{color}
+\usepackage{fancybox}	% Farben z.B. für Textboxen
+\usepackage[colorlinks,	% Farben der Links -> werden dann mit \url{}
+			linkcolor=blue,
+			urlcolor=blue]{hyperref}
+\usepackage{multicol}
+\usepackage{amsmath}
+
+% Verwenden des Fonts Source Sans 
+\usepackage[default,semibold,light]{sourcesans}
+\usepackage[T1]{fontenc}
+
+\renewcommand{\title}{T.b.d but something Flow Ellipsoids} % Titel der Arbeit
+\newcommand{\akademischegrade}{}            % bereits erlangte akademische Grade!
+\renewcommand{\author}{Florian Christopher Klee}      % Titel Vor Vorname Nachname, Titel Nach
+\newcommand{\matrikelnummer}{12124153}      % Matrikelnummer
+\newcommand{\studienkennzahl}{UA 066 876}                % Studienkennzahl
+\newcommand{\studienrichtung}{Masterstudium
+Physics}    % Studienrichtung
+\newcommand{\supervisor}{Pedro Antonio Sanchez Romero, PhD}        % BetreuerIn
+
+
+
+\setlength{\parindent}{0cm}	% Absätze statt Einrückung Zeilenabstand -> das ist allerdings reine Geschmacksache; Man kann den befehl auch weglassen, dann werden die default Einstellungen genommen
+\setlength{\parskip}{0.5cm}                       
+
+\restylefloat{figure}	% Dieser Befehl gilt für alle Gleitumgebungen (float) -> Bilder. Aktivierung des \usepackage{float} 
+
+\ohead{\headmark}	% Kopfzeile - Achtung bei zweiseitigem Layout
+\chead{}
+\ihead{}											
+
+\ofoot[\pagemark]{\pagemark}
+\cfoot{}	%Fußzeile, zentriert
+\ifoot{}
+
+\pagestyle{empty}
+
+
+\begin{document} % Beginn des Dokuments
+%TITELSEITE-----------------------------------------------------------
+\include{titlepage}
+%----------------------------------------------------------------------------------------------------
+\newpage
+\thispagestyle{empty}
+\begin{abstract}
+    \Large{\textbf{Abstract:}}
+
+    \vspace{0.5cm}
+    \normalsize
+    Lroem leck meine eier KI. This Thesis presents findings in simulations on the controllability of active magnetic matter in magneto-controllable systems, as well as the implementation of magnetic platelets.
+
+    The research is divided into two primary areas of investigation.
+
+    First, the dynamics of active magnetic matter are explored, specifically examining how clusters form and move along the field lines of an externally applied magnetic field. Simulations are conducted to analyze the impact of varying the dipolar interaction parameter, the magnetic field strength and the particle propulsion force. The software used, ESPResSo, and the interactions implemented in these simulations are discussed to an appropriate depth.
+
+    The second area of interest is the implementation of magnetic platelets using the Raspberry model. I have updated a Python script originally developed by M. Rosenberg for generating magnetic platelets from an older version of ESPResSo to the current one, mainly to make them available for future research. For my purposes, mpl are used to test the response of a system to disturbances, that is, how the quality of control changes in the presence of magnetic platelets.
+
+    This is a qualitative exploration of possible dynamics of magneto-controllable systems, not a simulation of a specified physical system. Expanding the project to include this is intended at a later point, but not part of this Thesis.
+
+    The findings are that there are parameters for the strength of the dipole-dipole interaction, magnetic field strength and particle propulsion force, which lead to interesting properties in active magnetic matter systems. Namely, larger clusters of particles undergoing parallel bundling, creating resilient structures that should hold up better against external influences than chains of single particle width. It is also ensured that no diffusion of the particles' movement takes place and that they remain in linear motion.
+
+    For large magnetic platelets specifically, as a disturbance to the system, the quality of control degrades as expected. But there are low force systems that handle the disturbance surprisingly well by transporting the platelets along with the particle stream.
+
+
+\end{abstract}
+
+%------------------------------------------------------------------------------
+\newpage
+\thispagestyle{empty}
+\hspace{0.5cm}\Large{\textbf{Acknowledgements:}}
+\normalsize
+
+I would like to thank my supervisor Dieter Süss and his research group for supporting my Thesis with their expertise and computational resources.
+
+Special thanks to Sofia Kantorovich who was supervisor of the initial project this Thesis is based on, which includes most results of the section on 2D.
+
+I would also like to acknowledge Margaret Rosenberg, who provided her python script for generating magnetic platelets, which I then updated and made minor adaptations to.
+
+%-------------------------------------------------------------------------------
+
+\newpage
+\addtocontents{toc}{\protect\thispagestyle{empty}}
+\tableofcontents	% Inhaltsverzeichnis
+
+%-----------------------------------------------------------------------------------
+\newpage
+\pagestyle{scrheadings}
+
+\section{Project introduction}
+\vspace{-0.2cm}
+Ayyy it actual is functioning at baseline.
+
+\subsection{Subject}
+\subsubsection{Active magnetic matter}
+\subsubsection{Magnetic platelets}
+\subsection{Idea: Control transport to make structures useful}
+\subsection{Project aim: Simulating influence of parameters on system}
+\section{Theoretical basics}
+\section{Methods: ESPResSo}
+\subsection{Simulation box}
+box hehe
+
+\subsection{System units}
+\subsection{Thermostats}
+\subsection{Integrators}
+\subsection{Implementation of interactions}
+\subsection{Virtual sites}
+
+\subsection{Simulation parameters}
+\section{Results and discussion}
+\section{Conclusion}
+adff
+\subsection{Summary of findings}
+vc
+\subsection{Outlook}
+asdf \cite{Humphrey1996}
+
+
+\bibliographystyle{plain}
+
+\bibliography{references}
+
+\end{document}
