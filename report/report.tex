@@ -93,6 +93,8 @@ Colloidal motors reffer to systems in which colloidal particles, that is, partic
 Treatment of blood clots via throbolytric drug delivery, has the problem that in the vicinity of a blood clot, there is little flow, by which to efficiently deliver a drug.\\
 One proposed method to improve this treatment is to use magnetic coloidal motors achived by a rotating magnetic field to induce a recirculation flow in the vicinity, in order to aid the diffusion of the drug or even mechanically erode the clot. See e.g. Cheng et al. (2014). \cite{Cheng2014}
 
+Compact as hell. Will likely expand on it.
+
 \subsection{Studied System}
 
 The system of interest here, is an experimental setup by Queiros Campos (2024) \cite{QueirosCampos2024}. It is show in Figure \ref{fig_system}. Simplified, the system is initially composed of a water based solution inside a channel of width 1 mm with maghemite nanoparticles of size 20nm and some primary aggregates of them with size 120-140 nm.\\
@@ -119,9 +121,14 @@ As a result, the fluid in the region with the aggregates, although disturbed by 
     \end{center}
 \end{figure}
 
-The goal of this project is to emulate the effects show in the experiment above in simulation.
+The goal of this project is to emulate the effects show in the experiment above, in simulation.
 
-\section{Model}
+\section{Models}
+
+\subsection{Raspberry particles}
+The rods in the experiment are modelled by Ellipsoid raspberry particles with a large semiaxes ratio.
+Raspberry particles are built from a collection of smaller spheres and should serve well to model the multi step aggregates formed in the experiment. Their multi core structure allows for rich magnetic interactions and they have a structured surface that is well suited to acurately capturing the involved hydrodynamics, while remaining coarse grained enough to be efficient in simulation.
+
 
 \subsection{Weeks-Chandler-Anderson potential}
 In the setup of ellipsoid geometries the Weeks-Chandler-Anderson potential is used as a continuous approximation for hard sphere particle potentials. It takes the following form:
@@ -137,10 +144,8 @@ In the setup of ellipsoid geometries the Weeks-Chandler-Anderson potential is us
 with particle distance r, particle diameter $\sigma$, interaction  strength $\epsilon$ and cutoff radius $r_{cut} = 2^{1/6} \sigma$.
 
 \subsection{Thermal Stoner-Wohlfarth}
-The one serious point I can think of for now.
 
-Go to source of \cite{Mostarac2025} for model for thermalized stoner wohlfarth model.
-
+Chuev (2007) \cite{Chuev2007}
 
 \section{Methods}
 
@@ -148,7 +153,7 @@ Go to source of \cite{Mostarac2025} for model for thermalized stoner wohlfarth m
 
 \subsection{Velocity verlet}
 
-The velocity verlet algorithm is used as an integrator in finding ellipsoid geometries. It discretizes the integration of the equations of motion in the following steps. Calculate the velocity v at the half step, new position x, force F at the new position and then the new velocity. They are shown below in equations \ref{eqn_7} - \ref{eqn_10}. The calculated force at the new position is also saved and reused in the next integration step. See Rapaport (2004) \cite{Rapaport2004}.
+The velocity verlet algorithm is used as an integrator in finding ellipsoid geometries. It discretizes the integration of the equations of motion in the following steps, where the force F is calculated from the applied potentials, as well as some contribution by the thermostat. Calculate the velocity v at the half step, new position x, force F at the new position and then the new velocity. They are shown below in equations \ref{eqn_7} - \ref{eqn_10}. The calculated force at the new position is also saved and reused in the next integration step. See Rapaport (2004) \cite{Rapaport2004}.
 
 \begin{equation}
     \mathbf{v}(t + \frac{d t}{2}) = \mathbf{v}(t) + \frac{\mathbf{F}(\mathbf{x}(t + d t), \mathbf{v}(t - d t/2),t)}{m}\frac{d t}{2},
@@ -170,6 +175,7 @@ The velocity verlet algorithm is used as an integrator in finding ellipsoid geom
     \label{eqn_10}
 \end{equation}
 
+with the current time t, time step dt, and mass m.
 
 \subsection{Finding ellipsoid geometries}
 The steps taken in generating configurations of raspberry ellipsoids of specifiable sizes and shapes are entirely haphazardous and unphysical. They merely serve the goal of efficiently finding configurations with convenient properties.
@@ -201,7 +207,7 @@ Credit use of ESPResSo \cite{Weeber2024} \cite{Weik2019} \cite{Grad2026}.
 
 \subsection{Ellipsoid setup}
 
-Quantitative stuff. Mean distances and variances.
+Quantitative stuff. Mean distances and variances here.
 
 Despite a good amount of time spent optimizing, the smooth shell algorithm remains gruelingly inefficient due to the poor conditioning of the problem. The nature of the WCA potential in combination with the number of neighbour pairs leads to massive amounts of computational time being wasted on persistent, tiny overlaps. Because of this, the opposite approach, increasing the nr of particles until no more suitable configuration is found for x time, would also surely have been the more efficient way.
 The filling of the inside is simpler, but produces large gaps, especially on thin ellipsoids.
@@ -210,7 +216,7 @@ Other method here
 
 In summary, the homogeneous algorithm performs significantly faster, produces a smooth enough surface to be comparable, and achieves tighter overall packing.
 
-\subsection{else(?)}
+\subsection{magnetic stuff here}
 
 Showing that the parameters and the suszeptibility show roughly the expected relationship, as in the presentations is easy, but lame.
 

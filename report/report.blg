@@ -6,45 +6,45 @@ The style file: IEEEtr.bst
 Database file #1: references.bib
 Warning--string name "july" is undefined
 --line 189 of file references.bib
-You've used 8 entries,
+You've used 9 entries,
             1876 wiz_defined-function locations,
-            539 strings with 5831 characters,
-and the built_in function-call counts, 2830 in all, are:
-= -- 237
-> -- 207
+            549 strings with 6032 characters,
+and the built_in function-call counts, 3115 in all, are:
+= -- 269
+> -- 215
 < -- 0
-+ -- 72
-- -- 64
-* -- 240
-:= -- 438
-add.period$ -- 10
-call.type$ -- 8
-change.case$ -- 6
++ -- 75
+- -- 66
+* -- 255
+:= -- 473
+add.period$ -- 11
+call.type$ -- 9
+change.case$ -- 7
 chr.to.int$ -- 0
-cite$ -- 8
-duplicate$ -- 115
-empty$ -- 209
-format.name$ -- 64
-if$ -- 648
+cite$ -- 9
+duplicate$ -- 135
+empty$ -- 231
+format.name$ -- 66
+if$ -- 723
 int.to.chr$ -- 0
-int.to.str$ -- 8
-missing$ -- 9
-newline$ -- 29
-num.names$ -- 8
-pop$ -- 26
+int.to.str$ -- 9
+missing$ -- 10
+newline$ -- 32
+num.names$ -- 9
+pop$ -- 28
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 0
-skip$ -- 93
+skip$ -- 114
 stack$ -- 0
-substring$ -- 164
-swap$ -- 57
+substring$ -- 176
+swap$ -- 70
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 0
 warning$ -- 0
-while$ -- 21
-width$ -- 9
-write$ -- 79
+while$ -- 23
+width$ -- 10
+write$ -- 89
 (There was 1 warning)

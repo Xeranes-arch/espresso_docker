@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.7.10)  7 SEP 2026 15:23
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.7.10)  7 SEP 2026 16:37
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -764,30 +764,35 @@ LaTeX Font Info:    Font shape `T1/SourceSansThree-TLF/sb/n' will be
  [3]
 LaTeX Font Info:    Font shape `T1/SourceSansThree-TLF/sb/n' will be
 (Font)              scaled to size 14.4pt on input line 90.
-<./images/System.png, id=68, 325.96782pt x 185.94469pt>
+<./images/System.png, id=70, 325.96782pt x 185.94469pt>
 File: ./images/System.png Graphic file (type png)
 <use ./images/System.png>
-Package pdftex.def Info: ./images/System.png  used on input line 104.
+Package pdftex.def Info: ./images/System.png  used on input line 106.
 (pdftex.def)             Requested size: 341.43306pt x 194.78235pt.
-<./images/flow_profile.png, id=72, 233.37187pt x 164.86594pt>
+<./images/flow_profile.png, id=74, 233.37187pt x 164.86594pt>
 File: ./images/flow_profile.png Graphic file (type png)
 <use ./images/flow_profile.png>
-Package pdftex.def Info: ./images/flow_profile.png  used on input line 116.
+Package pdftex.def Info: ./images/flow_profile.png  used on input line 118.
 (pdftex.def)             Requested size: 227.62204pt x 160.81027pt.
 LaTeX Font Info:    Font shape `T1/SourceSansThree-TLF/l/sl' in size <12> not available
-(Font)              Font shape `T1/SourceSansThree-TLF/l/it' tried instead on input line 129.
+(Font)              Font shape `T1/SourceSansThree-TLF/l/it' tried instead on input line 131.
 LaTeX Font Info:    Font shape `T1/SourceSansThree-TLF/l/it' will be
-(Font)              scaled to size 12.0pt on input line 129.
- [4] [5 <./images/System.png> <./images/flow_profile.png>] [6] [7] [8]
-LaTeX Font Info:    Trying to load font information for TS1+SourceSansThree-TLF on input line 224.
+(Font)              scaled to size 12.0pt on input line 131.
+ [4] [5 <./images/System.png> <./images/flow_profile.png>] [6] [7] [8] [9]
+LaTeX Font Info:    Trying to load font information for TS1+SourceSansThree-TLF on input line 230.
  (c:/texlive/2026/texmf-dist/tex/latex/sourcesans/TS1SourceSansThree-TLF.fd
 File: TS1SourceSansThree-TLF.fd 2026/05/03 (autoinst) Font definitions for TS1/SourceSansThree-TLF.
 )
 LaTeX Font Info:    Font shape `TS1/SourceSansThree-TLF/l/n' will be
-(Font)              scaled to size 12.0pt on input line 224.
- [9{c:/texlive/2026/texmf-dist/fonts/enc/dvips/sourcesans/a_44crgg.enc}] [10] (./report.bbl
+(Font)              scaled to size 12.0pt on input line 230.
+ [10{c:/texlive/2026/texmf-dist/fonts/enc/dvips/sourcesans/a_44crgg.enc}] (./report.bbl
 Underfull \hbox (badness 1048) in paragraph at lines 7--8
 []\T1/SourceSansThree-TLF/l/n/12 D. Mostarac, A. A. Kuznetsov, S. Hel-big, C. Abert, P. A. Sánchez, D. Suess, and S. S.
+ []
+
+
+Underfull \hbox (badness 1248) in paragraph at lines 16--17
+\T1/SourceSansThree-TLF/l/n/12 within néel's ideas and use-ful plots,'' \T1/SourceSansThree-TLF/l/it/12 Jour-nal of Physics: Con-densed Mat-ter\T1/SourceSansThree-TLF/l/n/12 , vol. 19,
  []
 
 ) [11] (./report.aux (./titlepage.aux))
@@ -797,18 +802,18 @@ L3 programming layer <2026-06-18>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 21197 strings out of 467167
- 460493 string characters out of 5413684
- 981942 words of memory out of 5000000
- 50183 multiletter control sequences out of 15000+600000
+ 21201 strings out of 467167
+ 460538 string characters out of 5413684
+ 982942 words of memory out of 5000000
+ 50185 multiletter control sequences out of 15000+600000
  717508 words of font info for 80 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 108i,20n,107p,11249b,1083s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 108i,19n,107p,11249b,1083s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2026/texmf-dist/fonts/type1/adobe/sourcesans/SourceSans3-Light.pfb><c:/texlive/2026/texmf-dist/fonts/type1/adobe/sourcesans/SourceSans3-LightIt.pfb><c:/texlive/2026/texmf-dist/fonts/type1/adobe/sourcesans/SourceSans3-Semibold.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-Output written on report.pdf (11 pages, 502152 bytes).
+Output written on report.pdf (11 pages, 503736 bytes).
 PDF statistics:
- 262 PDF objects out of 1000 (max. 8388607)
- 217 compressed objects within 3 object streams
- 46 named destinations out of 1000 (max. 500000)
- 168 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 268 PDF objects out of 1000 (max. 8388607)
+ 223 compressed objects within 3 object streams
+ 48 named destinations out of 1000 (max. 500000)
+ 176 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -2,19 +2,20 @@
 \contentsline {section}{\numberline {1}Introduction}{4}{section.1}%
 \contentsline {subsection}{\numberline {1.1}Motivation}{4}{subsection.1.1}%
 \contentsline {subsection}{\numberline {1.2}Studied System}{4}{subsection.1.2}%
-\contentsline {section}{\numberline {2}Model}{6}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Weeks-Chandler-Anderson potential}{6}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Thermal Stoner-Wohlfarth}{6}{subsection.2.2}%
-\contentsline {section}{\numberline {3}Methods}{6}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Langevin thermostat}{6}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}Velocity verlet}{6}{subsection.3.2}%
+\contentsline {section}{\numberline {2}Models}{6}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Raspberry particles}{6}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Weeks-Chandler-Anderson potential}{6}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Thermal Stoner-Wohlfarth}{6}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Methods}{7}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Langevin thermostat}{7}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Velocity verlet}{7}{subsection.3.2}%
 \contentsline {subsection}{\numberline {3.3}Finding ellipsoid geometries}{7}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1}Smooth shell configurations}{7}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.1}Smooth shell configurations}{8}{subsubsection.3.3.1}%
 \contentsline {subsubsection}{\numberline {3.3.2}Homogeneous configurations}{8}{subsubsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.4}Thermal Stoner-Wohlfarth}{8}{subsection.3.4}%
-\contentsline {section}{\numberline {4}Results and discussion}{8}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Ellipsoid setup}{8}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}else(?)}{9}{subsection.4.2}%
+\contentsline {subsection}{\numberline {3.4}Thermal Stoner-Wohlfarth}{9}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Results and discussion}{9}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Ellipsoid setup}{9}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}magnetic stuff here}{9}{subsection.4.2}%
 \contentsline {section}{\numberline {5}Conclusion}{10}{section.5}%
 \contentsline {subsection}{\numberline {5.1}Summary of findings}{10}{subsection.5.1}%
 \contentsline {subsection}{\numberline {5.2}Outlook}{10}{subsection.5.2}%
