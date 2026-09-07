@@ -121,78 +121,36 @@ As a result, the fluid in the region with the aggregates, although disturbed by 
 
 The goal of this project is to emulate the effects show in the experiment above in simulation.
 
-\section{Model}
-
-\subsection{Weeks-Chandler-Anderson potential}
-In the setup of ellipsoid geometries the Weeks-Chandler-Anderson potential is used as a continuous approximation for hard sphere particle potentials. It takes the following form:
-
-\begin{equation}
-    V_{WCA}(r) =
-    \begin{cases}
-        4\epsilon\left[\left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^{6}\right] + \epsilon & 0<r<r_{cut}                \\
-        0                                                                                                       & \hspace{0.75cm}r > r_{cut} \\
-    \end{cases}
-    \label{eqn_WCA}
-\end{equation}
-with particle distance r, particle diameter $\sigma$, interaction  strength $\epsilon$ and cutoff radius $r_{cut} = 2^{1/6} \sigma$.
-
-\subsection{Thermal Stoner-Wohlfarth}
-The one serious point I can think of for now.
-
-Go to source of \cite{Mostarac2025} for model for thermalized stoner wohlfarth model.
-
-
-\section{Methods}
-
-\subsection{Langevin thermostat}
-
-\subsection{Velocity verlet}
-
-The velocity verlet algorithm is used as an integrator in finding ellipsoid geometries. It discretizes the integration of the equations of motion in the following steps. Calculate the velocity v at the half step, new position x, force F at the new position and then the new velocity. They are shown below in equations \ref{eqn_7} - \ref{eqn_10}. The calculated force at the new position is also saved and reused in the next integration step. See Rapaport (2004) \cite{Rapaport2004}.
-
-\begin{equation}
-    \mathbf{v}(t + \frac{d t}{2}) = \mathbf{v}(t) + \frac{\mathbf{F}(\mathbf{x}(t + d t), \mathbf{v}(t - d t/2),t)}{m}\frac{d t}{2},
-    \label{eqn_7}
-\end{equation}
-
-\begin{equation}
-    \mathbf{x}(t + d t) = \mathbf{x}(t) + \mathbf{v}(t + \frac{d t}{2}) dt,
-    \label{eqn_8}
-\end{equation}
-
-\begin{equation}
-    \mathbf{F}(t + d t) = \mathbf{F}(\mathbf{x}(t + d t), \mathbf{v}(t + \frac{dt}{2}),t + d t),
-    \label{eqn_9}
-\end{equation}
-
-\begin{equation}
-    \mathbf{v}(t + d t) = \mathbf{v}(t + \frac{d t}{2}) + \frac{\mathbf{F}(\mathbf{x}(t + d t), \mathbf{v}(t + d t/2), t + dt)}{m}\frac{d t}{2},
-    \label{eqn_10}
-\end{equation}
-
-
-\subsection{Finding ellipsoid geometries}
-The steps taken in generating configurations of raspberry ellipsoids of specifiable sizes and shapes are entirely haphazardous and unphysical. They merely serve the goal of efficiently finding configurations with convenient properties.
-
+\section{Model and Methods}
+\subsection{Ellipsoid raspberries}
+There isn't a physical model underlying the creation of the raspberries. These are merely algorithms to efficiently find configurations.
 \subsubsection{Smooth shell configurations}
 The first implemented approach has a dynamic number of particles it tries to maximize, in a specified size of ellipsoid. It also guarantees a surface that is as densly populated as possible. This is motivated by the intention to have these particles emulate a solid within a solvent.
 
 It performs two steps. First, it populates the surface and then the interior defined by the previous step.
 
 A number of particles given by an upper bound estimate for how many will fit are positioned on the surface in a random configuration. They interact via a Weeks-Chandler-Anderson potential. The system is iterated at very low temperature, with the particle positions being rescaled to the ellipsoid surface after each step.
-This will result in a tightly packed surface with many overlaps between particles. The mean distance between next neighbours is tracked, as well as the smallest distance between any of those pairs. The target for both being to reach a value higher than the particle diameter. Once neither metric improves for a set amount of time, a particle is removed, to allow a looser configuration. This is repeated until a configuration is found where no overlap exists anymore and the particles are then fixed in space.
+This will result in a tightly packed surface with many overlaps between particles. The mean distance between next neighbours is tracked, as well as the smallest distance between any of those pairs. The target for both being to reach 1. Once neither metric improves for a set amount of time, a particle is removed, to allow a looser configuration. This is repeated until a configuration is found where no overlap exists anymore and the particles are then fixed in space.
 There are several optimizations involved, such as setting a higher temperature for a brief time after particle removal to equalize faster, and only checking thoroughly for suitable conafigurations fter the tracked values are suitably close to the target.
 
 To fill the interior, another number of particles is positioned inside the ellipsoid bound, in a hexagonal packing, interacting with each other and the outer shell and then itterated. This leads to strong forces that push particles through the outer shell. After a certain amount of force is not exceeded for a set time anymore, all particles outside the ellipsoid are removed and the rest continue to try and find a suitable configuration after the same method as the shell.
 
 
 \subsubsection{Homogeneous configurations}
-In the second implemented approach, a fixed number of particles is placed inside a defined shell and then itterated. The particles positions are only rescaled to the surface of the ellipsoid if they exceed its boundaries. If no configuration without overlap is found, the dimensions of the ellipsoid are scaled up by a small amount. This is repeated until a configuration with a smallest next neighbour distance of more than one particle diameter is found.
 
 \subsection{Thermal Stoner-Wohlfarth}
+\subsubsection{Model}
+The one serious point I can think of for now.
 
-\cite{Mostarac2025}
+Go to source of \cite{Mostarac2025} for model for thermalized stoner wohlfarth model.
 
+\subsubsection{Method}
+Mostarac 2025 \cite{Mostarac2025}
+
+\subsection{Computational methods}
+Trivial model really, just newtonian dyn.
+VV-integrator, thermostat etc.
+Basically explain the parts that I do with Espresso, without being specific to Espresso.
 
 
 \section{Results and discussion}
@@ -203,7 +161,7 @@ Credit use of ESPResSo \cite{Weeber2024} \cite{Weik2019} \cite{Grad2026}.
 
 Quantitative stuff. Mean distances and variances.
 
-Despite a good amount of time spent optimizing, the smooth shell algorithm remains gruelingly inefficient due to the poor conditioning of the problem. The nature of the WCA potential in combination with the number of neighbour pairs leads to massive amounts of computational time being wasted on persistent, tiny overlaps. Because of this, the opposite approach, increasing the nr of particles until no more suitable configuration is found for x time, would also surely have been the more efficient way.
+Despite a good amount of time spent optimizing, the smooth shell algorithm remains gruelingly inefficient due to the poor conditioning of the problem. The nature of the WCA potential in combination with the number of neighbour pairs leads to massive amounts of computational time being wasted on persistent, tiny overlaps.
 The filling of the inside is simpler, but produces large gaps, especially on thin ellipsoids.
 
 Other method here

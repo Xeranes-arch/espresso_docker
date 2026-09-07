@@ -35,7 +35,7 @@ def writevtk(path, system, types=None, mag=False):
     for line in lines:
         if line.startswith("SCALARS"):
             parts = line.split()
-            out.append(f"VECTORS {parts[1]} float\n")
+            out.append(f"vectors {parts[1]} float\n")
         elif line.startswith("LOOKUP_TABLE"):
             continue
         else:
@@ -233,12 +233,9 @@ def hex_ellipsoid_points(a, b, c, spacing=1, offset_from_000=None):
     dy = np.sqrt(3) * spacing / 2
     dz = np.sqrt(2/3) * spacing
 
-    # Define a proper 3D translation vector from your parameter
-    # If offset_from_000 is a single number, we treat it as an [X, Y, Z] shift
     if offset_from_000 is not None:
-        # Match your original logic of shifting by offset/2
         shift_vector = np.array(
-            [offset_from_000/2, offset_from_000/2, offset_from_000/2])
+            [offset_from_000, offset_from_000, offset_from_000])
     else:
         shift_vector = np.array([0.0, 0.0, 0.0])
 
@@ -264,14 +261,13 @@ def hex_ellipsoid_points(a, b, c, spacing=1, offset_from_000=None):
                 x_grid = ix * dx + x_shift
 
                 # Apply the spatial translation to get the actual point position
-                x = x_grid + shift_vector[0]
-                y = y_grid + shift_vector[1]
-                z = z_grid + shift_vector[2]
+                x = x_grid
+                y = y_grid
+                z = z_grid
 
-                # CRITICAL: The boundary check must use the actual final coordinates
-                # if the ellipsoid itself is sitting at (0,0,0)
                 if (x**2 / a**2) + (y**2 / b**2) + (z**2 / c**2) <= 1.0:
-                    points.append((x, y, z))
+                    points.append(
+                        (x + shift_vector[0], y + shift_vector[1], z + shift_vector[2]))
 
     return np.array(points)
 

@@ -50,11 +50,13 @@ espressomd.assert_features(
 
 # Redefining print to only obtain barebones output when DEBUG = FALSE
 # Also enables absolute cut off points when itteration nr reached
-DEBUG = False  # toggle this
+DEBUG = True  # toggle this
+Debug_length = 1000
 
 
 def print(*args, override=False, **kwargs):
-    if DEBUG or override:
+    OR = True
+    if DEBUG or override or OR:
         __builtins__.print(*args, **kwargs)
 
 # Define the semi-axes of the ellipsoid. [a, b, b]
@@ -67,7 +69,7 @@ def print(*args, override=False, **kwargs):
 # b = float(sys.argv[2])
 
 # Manual
-a = 6
+a = 2
 b = 2
 
 
@@ -229,7 +231,7 @@ phase_duration = 10  # duration of high temperature state (* check_nth)
 
 while True:
 
-    if DEBUG and k == 1000:
+    if DEBUG and k == Debug_length:
         print(LINE)
         print(LINE)
         print("DEBUG BREAK")
@@ -439,16 +441,21 @@ system.non_bonded_inter[2, 2].lennard_jones.set_params(
 
 
 ################################
+system.part.by_id(0).pos = center
+
 # If perfect Hcp: last sphere has to be placed at shell - tetraheder hight
 arr_of_points = hex_ellipsoid_points(
-    AXES[0], AXES[1], AXES[1], box_l)
+    AXES[0], AXES[1], AXES[1], offset_from_000=45)
+assert len(arr_of_points) != 0
+print(arr_of_points)
 
 for pos in arr_of_points:
     system.part.add(pos=pos, type=2)
 
+writevtk(f"_data/vtk_frames/filled.vtk", system)
+
 system.force_cap = 100
 
-system.part.by_id(0).pos = center
 system.part.by_id(0).fix = [True, True, True]
 system.part.by_id(0).rotation = [False, False, False]
 
@@ -474,7 +481,7 @@ forces = []
 second_stage = False
 phase_duration = 300
 while True:
-    if DEBUG and k == 1000:
+    if DEBUG and k == Debug_length:
         print(LINE)
         print(LINE)
         print("DEBUG BREAK")
@@ -523,6 +530,7 @@ while True:
         if save_visualization:
             writevtk(
                 f"_data/vtk_frames/inside_animation/inside{k}.vtk", system)
+            print(k)
             forces.append(max([np.linalg.norm(part.f)
                                for part in system.part.select(type=2)]))
 
@@ -532,6 +540,7 @@ while True:
             second_stage = True
             print(LINE)
             print("ENTERING SECOND STAGE")
+            exit()
             for part in system.part.select(type=2):
                 x, y, z = part.pos
                 x, y, z = [i - j for (i, j) in zip(part.pos, center)]

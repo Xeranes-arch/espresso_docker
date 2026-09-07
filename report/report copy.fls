@@ -2,8 +2,8 @@ PWD c:/Users/Xeranes/espresso_docker/report
 INPUT c:/texlive/2026/texmf.cnf
 INPUT c:/texlive/2026/texmf-dist/web2c/texmf.cnf
 INPUT c:/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT c:/Users/Xeranes/espresso_docker/report/report.tex
-OUTPUT report.log
+INPUT c:/Users/Xeranes/espresso_docker/report/report copy.tex
+OUTPUT report copy.log
 INPUT c:/texlive/2026/texmf-dist/tex/latex/koma-script/scrartcl.cls
 INPUT c:/texlive/2026/texmf-dist/tex/latex/koma-script/scrartcl.cls
 INPUT c:/texlive/2026/texmf-dist/tex/latex/koma-script/scrkbase.sty
@@ -169,13 +169,13 @@ INPUT c:/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 INPUT c:/texlive/2026/texmf-dist/tex/latex/bookmark/bkm-pdftex.def
 INPUT c:/texlive/2026/texmf-dist/tex/latex/bookmark/bkm-pdftex.def
 INPUT c:/texlive/2026/texmf-dist/tex/latex/bookmark/bkm-pdftex.def
-INPUT ./report.aux
-INPUT ./report.aux
-INPUT report.aux
+INPUT ./report copy.aux
+INPUT ./report copy.aux
+INPUT report copy.aux
 INPUT ./titlepage.aux
 INPUT ./titlepage.aux
 INPUT titlepage.aux
-OUTPUT report.aux
+OUTPUT report copy.aux
 INPUT c:/texlive/2026/texmf-dist/tex/latex/ly1/ly1ptm.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/ly1/ly1ptm.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/ly1/ly1ptm.fd
@@ -192,7 +192,7 @@ INPUT c:/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 INPUT c:/texlive/2026/texmf-dist/tex/latex/translations/translations-basic-dictionary-english.trsl
 INPUT c:/texlive/2026/texmf-dist/tex/latex/translations/translations-basic-dictionary-english.trsl
 INPUT c:/texlive/2026/texmf-dist/tex/latex/translations/translations-basic-dictionary-english.trsl
-OUTPUT report.pdf
+OUTPUT report copy.pdf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmr10.tfm
 INPUT ./titlepage.tex
 INPUT ./titlepage.tex
@@ -237,10 +237,10 @@ INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Semibold
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/adobe/sourcesans/SourceSans3-Semibold-tlf-t1.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Semibold-tlf-t1--base.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Semibold-tlf-t1.tfm
-INPUT ./report.toc
-INPUT ./report.toc
-INPUT report.toc
-OUTPUT report.toc
+INPUT ./report copy.toc
+INPUT ./report copy.toc
+INPUT report copy.toc
+OUTPUT report copy.toc
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/adobe/sourcesans/SourceSans3-Semibold-tlf-t1.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Semibold-tlf-t1--base.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Semibold-tlf-t1.tfm
@@ -259,9 +259,6 @@ INPUT c:/texlive/2026/texmf-dist/fonts/vf/adobe/sourcesans/SourceSans3-LightIt-t
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-LightIt-tlf-t1--base.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/adobe/sourcesans/SourceSans3-Semibold-tlf-t1.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Semibold-tlf-t1--base.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmbx8.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmbx6.tfm
 INPUT c:/texlive/2026/texmf-dist/tex/latex/sourcesans/TS1SourceSansThree-TLF.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/sourcesans/TS1SourceSansThree-TLF.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/sourcesans/TS1SourceSansThree-TLF.fd
@@ -269,18 +266,16 @@ INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Light-tl
 INPUT c:/texlive/2026/texmf-dist/fonts/vf/adobe/sourcesans/SourceSans3-Light-tlf-ts1.vf
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/adobe/sourcesans/SourceSans3-Light-tlf-ts1--base.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/enc/dvips/sourcesans/a_44crgg.enc
-INPUT ./report.bbl
-INPUT ./report.bbl
-INPUT report.bbl
-INPUT report.aux
+INPUT ./report copy.bbl
+INPUT ./report copy.bbl
+INPUT report copy.bbl
+INPUT report copy.aux
 INPUT ./titlepage.aux
 INPUT ./titlepage.aux
 INPUT titlepage.aux
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/adobe/sourcesans/SourceSans3-Light.pfb
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/adobe/sourcesans/SourceSans3-LightIt.pfb
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/adobe/sourcesans/SourceSans3-Semibold.pfb
-INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb
-INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb
 INPUT c:/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb

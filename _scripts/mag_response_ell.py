@@ -20,46 +20,44 @@ Propagation = espressomd.propagation.Propagation
 
 equil_steps = 1000
 equil_steps = 50
-# equil_steps = 0
 
 sim_steps = 1000
 sim_steps = 10
 
-
 vis = True
 # vis = False
 
+# Params via subprocess
 # ratio = float(sys.argv[1])
 # Lambda = float(sys.argv[2])
 # KV = float(sys.argv[3])
 # current_filename = sys.argv[4]
 
+# Params manually configured
 ratio = 2.
 Lambda = 1
 KV = 1
-
+current_filename = f"_data/mag_response/manual_r{ratio}_l{Lambda}_KV{KV}.npz"
 
 ratio = float(ratio)
+Lambda = float(Lambda)
 KV = float(KV)
 
-###
-
-
-# Creates a nice exp spread of x values
-# ulim_alphas = 100
+###################### ------Create an exp spread of alpha values------######################
+nr_of_alphas = 10
+llim_alphas = 0
 ulim_alphas = 25
+curvature = 4
 
-lin = np.linspace(0, ulim_alphas, 10, dtype=float)
-# lin = np.linspace(0, ulim_alphas, 7, dtype=float)
+lin = np.linspace(llim_alphas, ulim_alphas, nr_of_alphas, dtype=float)
+unnorm_alphas = [np.exp(i/ulim_alphas*curvature)-1 for i in lin]
+maxv = max(unnorm_alphas)
+alphas = [i/maxv*ulim_alphas for i in unnorm_alphas]
 
-# alphas = [np.exp(i/ulim_alphas*5)-1 for i in lin] # og
-alphas = [np.exp(i/ulim_alphas*4)-1 for i in lin]
-maxv = max(alphas)
-alphas = [i/maxv*ulim_alphas for i in alphas]
-
-# plt.scatter(lin, alphas)
-# plt.savefig("plot.png")
-# exit()
+# visualize distribution of alphas
+plt.scatter(lin, alphas)
+plt.savefig("plot.png")
+exit()
 
 ###################### ------Constants------######################
 ###################### ---------------------######################
@@ -67,6 +65,7 @@ alphas = [i/maxv*ulim_alphas for i in alphas]
 LINE = "_________________________________\n"
 print(LINE)
 
+# SI defining
 sigma = 1
 kT = 1
 mass = 1
@@ -89,7 +88,7 @@ H_ani_inv = 1/(2*KV/(mu_0 * m))
 system = espressomd.System(box_l=[90.0, 90.0, 90.0])
 system.time_step = 0.0001  # MD time step in simulation units
 system.cell_system.skin = 0.4
-system.thermostat.set_langevin(kT=kT, gamma=75., gamma_rotation=25., seed=42)
+system.thermostat.set_langevin(kT=kT, gamma=1., gamma_rotation=1., seed=42)
 
 filename = f"_data/coordinates/512_ratio_{ratio}_1.0.txt"
 pos_arr = np.loadtxt(filename)
@@ -97,16 +96,16 @@ pos_arr = np.loadtxt(filename)
 # Particle setup
 for pos in pos_arr:
 
+    # Anisotropy axis particle
     p1 = system.part.add(pos=pos, fix=(True, True, True))
     p1.director = rv()  # easy axis direction
     p1.rotation = (False, False, False)
 
     p2 = system.part.add(pos=p1.pos, fix=(True, True, True))
     # set dipole moment for the virtual particle in reduced units
-    p1.dip = [0.5 * i for i in rv()]  # easy axis direction
-    # p2.dip = (m, 0, 0)
+    p2.dip = (m, 0, 0)
     # disable rotations of the virtual site tSW handles this
-    p2.rotation = (False, False, False)
+    p2.rotation = (True, True, True)
     p2.magnetodynamics = {
         'is_enabled': True,
         # inverse anisotropy field (1/H_k) in reduced units
@@ -121,17 +120,13 @@ for pos in pos_arr:
     p2.propagation = Propagation.TRANS_VS_RELATIVE | Propagation.ROT_VS_INDEPENDENT
 
 # Dipolar Direct Sum for DpDp
-# dds = espressomd.magnetostatics.DipolarDirectSum(
-#     prefactor=Lambda, n_replicas=2, gpu=False)
-# system.magnetostatics.solver = dds
+dds = espressomd.magnetostatics.DipolarDirectSum(
+    prefactor=Lambda, n_replicas=2, gpu=False)
+system.magnetostatics.solver = dds
 
 # # To be observed
-# dipm_tot_z = espressomd.observables.MagneticDipoleMoment(
-#     ids=system.part.all().id)
-
-# system.integrator.run(0)
-writevtk(f"_data/vtk_frames/ANI.vtk", system, mag=True)
-exit()
+dipm_tot_z = espressomd.observables.MagneticDipoleMoment(
+    ids=system.part.all().id)
 
 # main loop over field strengths
 d_alpha_means = []

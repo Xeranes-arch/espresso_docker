@@ -23,7 +23,7 @@ for ratio in ratios:
         pass
     for Lambda in lambdas:
         for KV in KVS:
-            filename = f"_data/mag_response/mag_response_data_r{ratio}_l{Lambda}_KV{KV}.npz"
+            filename = f"_data/mag_response/r{ratio}_l{Lambda}_KV{KV}.npz"
 
             # Write the filename string to the 'current' file
             with open("currents", "a") as f:
