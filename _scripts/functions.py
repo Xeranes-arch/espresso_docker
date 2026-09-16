@@ -1,6 +1,9 @@
 from numba import njit, prange
 import numpy as np
 from itertools import combinations
+import espressomd
+import os
+import json
 
 
 def rq():
@@ -19,7 +22,7 @@ def rpos(box_l):
     return np.random.uniform(0.0, box_l, size=3)
 
 
-def writevtk(path, system, types=None, mag=False):
+def writevtk(path, system, types=None, mag=False, easy_axes=False):
     """Custom writevtk that further handles the file made by espresso"""
     # call original function
     if types:
@@ -50,16 +53,33 @@ def writevtk(path, system, types=None, mag=False):
         for part in system.part:
             out.append("\n" + str(part.type))
 
-    with open(path, "w") as f:
-        f.writelines(out)
-
     if mag:
         out.append("\nVECTORS mag float")
         for part in system.part.all():
-            v_str = " ".join(map(str, part.dip))
+            dip = part.dip
+            norm = (dip[0]**2 + dip[1]**2 + dip[2]**2)**0.5
+            if norm > 0:  # Avoid division by zero
+                dip_normalized = [x / norm for x in dip]
+            else:
+                dip_normalized = [0, 0, 0]  # Keep zero vector as is
+            v_str = " ".join(map(str, dip_normalized))
             out.append(f"\n{v_str}")
-        with open(path, "w") as f:
-            f.writelines(out)
+
+    if easy_axes:
+        out.append("\nVECTORS easy_axes float")
+        for part in system.part.all():
+            # for part in system.part.all():
+            dir = part.director
+            norm = (dir[0]**2 + dir[1]**2 + dir[2]**2)**0.5
+            if norm > 0:  # Avoid division by zero
+                dir_normalized = [x / norm for x in dir]
+            else:
+                dir_normalized = [0, 0, 0]  # Keep zero vector as is
+            v_str = " ".join(map(str, dir_normalized))
+            out.append(f"\n{v_str}")
+
+    with open(path, "w") as f:
+        f.writelines(out)
 
 
 def ell_surface_area(axes):
@@ -270,6 +290,89 @@ def hex_ellipsoid_points(a, b, c, spacing=1, offset_from_000=None):
                         (x + shift_vector[0], y + shift_vector[1], z + shift_vector[2]))
 
     return np.array(points)
+
+
+def upalpha(system, alpha,  m, field_dir=[0, 0, 1], kT=1, mu_0=4*np.pi):
+    # Reset System
+    system.constraints.clear()
+    # set magnetic field constraint
+    H = alpha * kT / (mu_0 * m)
+
+    H_field = [i * H for i in field_dir]
+    H_constraint = espressomd.constraints.HomogeneousMagneticField(
+        H=H_field)
+    system.constraints.add(H_constraint)
+    return H_field
+
+
+def uplambda(system, Lambda, H_field, KV, kT=1, mu_0=4*np.pi, sigma=1, V=np.pi/6):
+    m = round(np.sqrt(Lambda*4*np.pi*sigma**3*kT/mu_0), 2)
+    H_ani_inv = 1/(2*KV/(mu_0 * m))
+    for part in system.part.select(type=1):
+        norm = np.linalg.norm(part.dip)
+        part.dip = [i/norm for i in part.dip]
+        part.magnetodynamics = {
+            'is_enabled': True,
+            # inverse anisotropy field (1/H_k) in reduced units
+            'anisotropy_field_inv': H_ani_inv,
+            'sat_mag': m/V,  # saturation magnetisation in reduced units
+            'anisotropy_energy': KV,  # anisotropy energy K * V in reduced units !!!KV/kT > 3
+            # kinetic Monte Carlo time increment [s]
+            'sw_dt_incr': 1.0e-10,
+            # inverse attempt time (1/tau_0) [1/s]
+            'sw_tau0_inv': 1.0e9
+        }
+    system.constraints.clear()
+    H_constraint = espressomd.constraints.HomogeneousMagneticField(
+        H=H_field)
+    system.constraints.add(H_constraint)
+
+
+def loop_area(curve1, curve2, set):
+    height = np.flip(np.array(curve1)) - np.array(curve2)
+    return np.trapezoid(height, set)
+
+
+def append_to_npz(filepath, **new_data):
+    """
+    Append new data to an existing .npz file without overwriting.
+    If the file doesn't exist, it will be created.
+    """
+    # Load existing data if file exists
+    existing_data = {}
+    if os.path.exists(filepath):
+        existing_data = dict(np.load(filepath, allow_pickle=True))
+
+    # Update with new data
+    existing_data.update(new_data)
+
+    # Save back to the same file
+    np.savez(filepath, **existing_data)
+    print(f"Appended data to {filepath}")
+
+
+def save_to_json(filename, new_entry_data):
+    # Load existing data (if file exists)
+    try:
+        with open(filename, "r") as f:
+            existing_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing_data = {}
+
+    # Generate a unique key (e.g., "exp_001", "exp_002", etc.)
+    counter = 1
+    while f"entry_{counter:03d}" in existing_data:
+        counter += 1
+    unique_key = f"entry_{counter:03d}"
+
+    # Add the new entry with the unique key
+    existing_data[unique_key] = new_entry_data
+
+    # Save back to JSON
+    with open(filename, "w") as f:
+        json.dump(existing_data, f, indent=4)
+
+    return unique_key  # Return the key for reference
 
 # def hex_ellipsoid_points(a, b, c, offset_from_000=None, spacing=1.0):
 #     """

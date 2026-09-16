@@ -1,5 +1,6 @@
 from functions import writevtk
 from functions import rv
+from functions import upalpha, uplambda
 
 
 import os
@@ -19,15 +20,15 @@ Propagation = espressomd.propagation.Propagation
 
 
 equil_steps = 1000
-equil_steps = 50
+equil_steps = 0
 
 sim_steps = 1000
-sim_steps = 10
+sim_steps = 100
 
 vis = True
 # vis = False
 
-# Params via subprocess
+# Params via parent process
 # ratio = float(sys.argv[1])
 # Lambda = float(sys.argv[2])
 # KV = float(sys.argv[3])
@@ -35,8 +36,8 @@ vis = True
 
 # Params manually configured
 ratio = 2.
-Lambda = 1
-KV = 1
+Lambda = 0.001
+KV = 3
 current_filename = f"_data/mag_response/manual_r{ratio}_l{Lambda}_KV{KV}.npz"
 
 ratio = float(ratio)
@@ -44,10 +45,10 @@ Lambda = float(Lambda)
 KV = float(KV)
 
 ###################### ------Create an exp spread of alpha values------######################
-nr_of_alphas = 10
+nr_of_alphas = 20
 llim_alphas = 0
 ulim_alphas = 25
-curvature = 4
+curvature = 1
 
 lin = np.linspace(llim_alphas, ulim_alphas, nr_of_alphas, dtype=float)
 unnorm_alphas = [np.exp(i/ulim_alphas*curvature)-1 for i in lin]
@@ -55,10 +56,12 @@ maxv = max(unnorm_alphas)
 alphas = [i/maxv*ulim_alphas for i in unnorm_alphas]
 
 # visualize distribution of alphas
-plt.scatter(lin, alphas)
-plt.savefig("plot.png")
-exit()
+# plt.scatter(lin, alphas)
+# plt.savefig("plot.png")
+# plt.clf()
 
+reverse = np.linspace(ulim_alphas, llim_alphas, nr_of_alphas)
+alphas.extend(reverse)
 ###################### ------Constants------######################
 ###################### ---------------------######################
 
@@ -70,9 +73,14 @@ sigma = 1
 kT = 1
 mass = 1
 mu_0 = 4 * np.pi
-m = round(np.sqrt(Lambda*4*np.pi*sigma**3*kT/mu_0), 2)
 
 V = np.pi/6 * sigma**3
+
+###################### --Calculated params--######################
+###################### ---------------------######################
+
+# DpDp
+m = round(np.sqrt(Lambda*4*np.pi*sigma**3*kT/mu_0), 2)
 M_s = m/V
 
 # Zeeman
@@ -91,17 +99,18 @@ system.cell_system.skin = 0.4
 system.thermostat.set_langevin(kT=kT, gamma=1., gamma_rotation=1., seed=42)
 
 filename = f"_data/coordinates/512_ratio_{ratio}_1.0.txt"
+filename = f"_data/coordinates/64.0_ratio_{ratio}_1.0.txt"
 pos_arr = np.loadtxt(filename)
 
 # Particle setup
 for pos in pos_arr:
 
     # Anisotropy axis particle
-    p1 = system.part.add(pos=pos, fix=(True, True, True))
+    p1 = system.part.add(pos=pos, fix=(True, True, True), type=0)
     p1.director = rv()  # easy axis direction
     p1.rotation = (False, False, False)
 
-    p2 = system.part.add(pos=p1.pos, fix=(True, True, True))
+    p2 = system.part.add(pos=p1.pos, fix=(True, True, True), type=1)
     # set dipole moment for the virtual particle in reduced units
     p2.dip = (m, 0, 0)
     # disable rotations of the virtual site tSW handles this
@@ -124,7 +133,7 @@ dds = espressomd.magnetostatics.DipolarDirectSum(
     prefactor=Lambda, n_replicas=2, gpu=False)
 system.magnetostatics.solver = dds
 
-# # To be observed
+# To be observed
 dipm_tot_z = espressomd.observables.MagneticDipoleMoment(
     ids=system.part.all().id)
 
@@ -132,11 +141,6 @@ dipm_tot_z = espressomd.observables.MagneticDipoleMoment(
 d_alpha_means = []
 d_alpha_stds = []
 for i, alpha in enumerate(alphas):
-    # alpha = 40
-    # exitvis = input(str((LINE + LINE + LINE + LINE + LINE + LINE + LINE +
-    #                 LINE + LINE + "PAUSED\n" + LINE + "\nx to disable vis:\n")))
-    # if exitvis == "x":
-    #     vis = False
 
     # set magnetic field constraint
     H = alpha * kT / (mu_0 * m)
@@ -174,16 +178,23 @@ for i, alpha in enumerate(alphas):
     # Run
     print("Running system")
     dipms = []
-    for i in tqdm.tqdm(range(sim_steps)):
+    # for i in tqdm.tqdm(range(sim_steps)):
+    for alpha in tqdm.tqdm(alphas):
         system.integrator.run(1)
+
+        alpha = alphas[i]
+        upalpha(system, alpha, m)
+
+        # write animation frames
         if vis:
             writevtk(
                 f"_data/vtk_frames/mag_response/mag{i}.vtk", system, mag=True)
+
         dipms.append(dipm_tot_z.calculate()[2]/M_s/pos_arr.shape[0])
 
-    # plt.plot(np.arange(sim_steps), dipms)
-    # plt.savefig("timeplot.png")
-    # exit()
+    plt.plot(np.arange(len(alphas)), dipms)
+    plt.savefig("timeplot.png")
+    exit()
 
     # Gather data
     mean = np.mean(dipms)

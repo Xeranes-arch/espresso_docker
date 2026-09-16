@@ -6,33 +6,25 @@ import time
 t_0 = time.time()
 
 ratios = ["2.0", "3.0", "4.0", "5.0", "6.0"]
-ratios = ["2.0"]
+# ratios = ["2.0", "3.0"]
 
-# lambdas = [1, 2, 5]
-lambdas = [0.25]
+lambdas = [0.25, 0.5]
 
-KVS = [3, 4, 5, 6]
-KVS = [4]
+KVS = [5]
 
+pnrs = [64.0, 128.0, 256.0, 512.0]
+# pnrs = [64.0, 128.0]
 
-ms = [np.sqrt(i) for i in lambdas]
+axes = ["[0, 0, 1]", "[1, 0, 1]"]
+
 
 params = []
 for ratio in ratios:
-    with open("currents", "w") as f:
-        pass
     for Lambda in lambdas:
         for KV in KVS:
-            filename = f"_data/mag_response/r{ratio}_l{Lambda}_KV{KV}.npz"
-
-            # Write the filename string to the 'current' file
-            with open("currents", "a") as f:
-                f.write(f"{filename}\n")
-
-            subprocess.run(["/home/xeranes/espresso/build/pypresso",
-                            "/workspace/_scripts/mag_response_ell.py", str(float(ratio)), str(float(Lambda)), str(float(KV)), filename], check=True)
-
-    # subprocess.run(["/home/xeranes/espresso/build/pypresso",
-    #                 "/workspace/_scripts/load_mag_data_auto.py"], check=True)
+            for pnr in pnrs:
+                for ax in axes:
+                    subprocess.run(["/home/xeranes/espresso/build/pypresso",
+                                    "/workspace/_scripts/mag_response_ell.py", str(float(ratio)), str(float(Lambda)), str(float(KV)), str(float(pnr)), ax], check=True)
 
 print("Total time: ", time.time() - t_0)

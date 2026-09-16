@@ -65,12 +65,13 @@ def print(*args, override=False, **kwargs):
 # for running from outside with args if you want several geometries cued up with cue_AXES.py
 a = float(sys.argv[1])
 b = float(sys.argv[2])
+n_particles = float(sys.argv[3])
 
 # Manual aspüect ratio
 # a = 2
 # b = 1
 
-n_particles = 512
+# n_particles = 512
 
 # Writes vtk animation frames of the shell process and inner process, doesn't hamper performance much at all
 save_visualization = True
