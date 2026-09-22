@@ -292,12 +292,12 @@ def hex_ellipsoid_points(a, b, c, spacing=1, offset_from_000=None):
     return np.array(points)
 
 
-def upalpha(system, alpha,  m, field_dir=[0, 0, 1], kT=1, mu_0=4*np.pi):
+def upalpha(system, alpha,  m, field_dir_z=1, field_dir_x=0, kT=1, mu_0=4*np.pi):
+    field_dir = [field_dir_x, 0, field_dir_z]
     # Reset System
     system.constraints.clear()
     # set magnetic field constraint
     H = alpha * kT / (mu_0 * m)
-
     H_field = [i * H for i in field_dir]
     H_constraint = espressomd.constraints.HomogeneousMagneticField(
         H=H_field)
