@@ -1,4 +1,3 @@
-_data/vtk_frames/
-_data/graphic_results
+_data/
 # geometry/.devcontainer/
 # simulation/.devcontainer/
