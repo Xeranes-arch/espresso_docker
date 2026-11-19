@@ -1,0 +1,61 @@
+\begin{thebibliography}{10}
+
+\bibitem{QueirosCampos2024}
+J.~Queiros~Campos, M.~Raboisson-Michel, S.~Schaub, S.~Toe, L.~Boulant, G.~Verger-Dubois, A.~Zubarev, and P.~Kuzhir, ``Field-induced macroscopic flow of a dilute self-assembling magnetic colloid under rotating magnetic fields,'' {\em Journal of Fluid Mechanics}, vol.~981, 2024.
+
+\bibitem{Mostarac2025}
+D.~Mostarac, A.~A. Kuznetsov, S.~Helbig, C.~Abert, P.~A. Sánchez, D.~Suess, and S.~S. Kantorovich, ``Thermal stoner-wohlfarth model for magnetodynamics of single domain nanoparticles: Implementation and validation,'' {\em Physical Review B}, vol.~111, no.~1, p.~014438, 2025.
+
+\bibitem{Chen2019}
+X.~Chen, C.~Zhou, and W.~Wang, ``Colloidal motors 101: A beginner's guide to colloidal motor research,'' {\em Chemistry - An Asian Journal}, vol.~14, no.~14, pp.~2388--2405, 2019.
+
+\bibitem{Cheng2014}
+R.~Cheng, W.~Huang, L.~Huang, B.~Yang, L.~Mao, K.~Jin, Q.~ZhuGe, and Y.~Zhao, ``Acceleration of tissue plasminogen activator-mediated thrombolysis by magnetically powered nanomotors,'' {\em ACS Nano}, vol.~8, no.~8, pp.~7746--7754, 2014.
+
+\bibitem{Weeks1971}
+J.~D. Weeks, D.~Chandler, and H.~C. Andersen, ``Role of repulsive forces in determining the equilibrium structure of simple liquids,'' {\em The Journal of Chemical Physics}, vol.~54, no.~12, pp.~5237--5247, 1971.
+
+\bibitem{LennardJones1931}
+J.~E. Lennard-Jones, ``Cohesion,'' {\em Proceedings of the Physical Society}, vol.~43, no.~5, pp.~461--482, 1931.
+
+\bibitem{Chuev2007}
+M.~A. Chuev and J.~Hesse, ``Nanomagnetism: extension of the stoner-wohlfarth model within néel's ideas and useful plots,'' {\em Journal of Physics: Condensed Matter}, vol.~19, no.~50, p.~506201, 2007.
+
+\bibitem{Stoner1948}
+E.~C. Stoner and E.~P. Wohlfarth, ``A mechanism of magnetic hysteresis in heterogeneous alloys,'' {\em Philosophical Transactions of the Royal Society of London. Series A, Mathematical and Physical Sciences}, vol.~240, no.~826, pp.~599--642, 1948.
+
+\bibitem{Bean1959}
+C.~P. Bean and J.~D. Livingston, ``Superparamagnetism,'' {\em Journal of Applied Physics}, vol.~30, no.~4, pp.~S120--S129, 1959.
+
+\bibitem{Boltzmann2012}
+L.~Boltzmann, {\em Wissenschaftliche Abhandlungen}.
+\newblock Cambridge University Press, 2012.
+
+\bibitem{Allen2017}
+M.~P. Allen, {\em Computer simulation of liquids}.
+\newblock Oxford: Oxford University Press, second edition~ed., 2017.
+
+\bibitem{Swope1982}
+W.~C. Swope, H.~C. Andersen, P.~H. Berens, and K.~R. Wilson, ``A computer simulation method for the calculation of equilibrium constants for the formation of physical clusters of molecules: Application to small water clusters,'' {\em The Journal of Chemical Physics}, vol.~76, no.~1, pp.~637--649, 1982.
+
+\bibitem{Rapaport2004}
+D.~C. Rapaport, {\em The Art of Molecular Dynamics Simulation}.
+\newblock Cambridge University Press, 2004.
+
+\bibitem{Poperechny2014}
+I.~Poperechny, Y.~Raikher, and V.~Stepanov, ``Dynamic hysteresis of a uniaxial superparamagnet: Semi-adiabatic approximation,'' {\em Physica B: Condensed Matter}, vol.~435, pp.~58--61, 2014.
+
+\bibitem{Brown1963}
+W.~F. Brown, ``Thermal fluctuations of a single-domain particle,'' {\em Physical Review}, vol.~130, no.~5, pp.~1677--1686, 1963.
+
+\bibitem{Weeber2024}
+R.~Weeber, J.-N. Grad, D.~Beyer, P.~M. Blanco, P.~Kreissl, A.~Reinauer, I.~Tischler, P.~Košovan, and C.~Holm, {\em ESPResSo, a Versatile Open-Source Software Package for Simulating Soft Matter Systems}, pp.~578--601.
+\newblock Elsevier, 2024.
+
+\bibitem{Weik2019}
+F.~Weik, R.~Weeber, K.~Szuttor, K.~Breitsprecher, J.~de~Graaf, M.~Kuron, J.~Landsgesell, H.~Menke, D.~Sean, and C.~Holm, ``{ESPResSo} 4.0 -- an extensible software package for simulating soft matter systems,'' {\em The European Physical Journal Special Topics}, vol.~227, no.~14, pp.~1789--1816, 2019.
+
+\bibitem{Grad2026}
+J.-N. Grad, F.~Weik, A.~Reinauer, H.~Kobayashi, I.~Tischler, P.~M. Blanco, D.~Mostarac, S.~Bindgen, D.~Beyer, J.~Hoßbach, M.~Kuron, P.~Hohenberger, N.~Müller, R.~Frenner, Y.~Gandhi, M.~E. Brito, S.~Tovey, and R.~Weeber, ``Espresso,'' 2026.
+
+\end{thebibliography}

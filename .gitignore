@@ -1,3 +1,6 @@
 _data/
+!_data/vtk_frames/
+_data/vtk_frames/*
+!_data/vtk_frames/mag_response/
 # geometry/.devcontainer/
 # simulation/.devcontainer/

@@ -1,0 +1,12 @@
+This shows how a system can enter this oszillatory mode and get stuck there.
+
+When the change in the video happens it is because I manually set a magnetic moment to the opposite direction.
+Which ends the oszillation. But when looking at the animation I made, it would seem that this isn't energetically more favourable.
+But considering the geometry here, I think it definitely should make a difference in terms of energy. 
+Maybe it's just that with simultanious steps, all particles switching to the energetically most favourable minimum doesn't mean that they now have that state.
+
+The system would never be able to reach that state via switching though. As can be seen by the lack of second minima in the Energy landscapes.
+
+How big of a problem is this? I don't know.
+What to do about this? I don't know.
+Is the ellipsoid's oszillating the same? Probably?

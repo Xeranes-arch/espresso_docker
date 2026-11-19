@@ -1,0 +1,198 @@
+\documentclass[12pt, DIV=12]{scrartcl}
+
+
+\usepackage[utf8]{inputenc}      % SELBST HINZUGEFÜGT
+\usepackage{float}				 % Figure im Text verankern können
+\usepackage[pdftex]{graphics}    % Einbinden von Bildern 
+\usepackage{graphicx}            % Einbinden von Bildern (jpg)
+\usepackage{amsmath}             % Mathematical Society Package
+\usepackage[bf]{caption}         % Bildunterschriftenformatierung
+\usepackage{siunitx} 			 % SI Einheiten
+\usepackage{subcaption} % For subfigures
+
+
+
+\sisetup{separate-uncertainty=true,exponent-product = \cdot,} % durch diese Parameter wird bewirkt, dass Fehlerangaben in der von uns bevorzugten Weise erfolgen, also (Wert +- Fehler) Einheit
+
+\usepackage{color}
+\usepackage{fancybox}	% Farben z.B. für Textboxen
+\usepackage[colorlinks,	% Farben der Links -> werden dann mit \url{}
+			linkcolor=blue,
+			urlcolor=blue]{hyperref}
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{upgreek}
+\usepackage{microtype}
+
+% Verwenden des Fonts Source Sans 
+% \usepackage[default,semibold,light]{sourcesans}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% Timeline
+\usepackage{tikz}
+\usetikzlibrary{calc, intersections, patterns, positioning, shapes.misc, fadings, through,decorations.pathreplacing}
+
+\definecolor{reddish}{cmyk}{0.3, 0.9, 0.9, 0.2}
+\definecolor{lightgray}{cmyk}{0,0,0,0.2}
+\colorlet{ColorOne}{reddish}
+\colorlet{ColorTwo}{green}
+\colorlet{ColorThree}{purple!70!blue}
+\colorlet{ColorFour}{blue!50!green}
+%
+
+\renewcommand{\title}{prelim Construction and magnetic response of ellipsoidal raspberry particles} % Titel der Arbeit
+\newcommand{\akademischegrade}{}            % bereits erlangte akademische Grade!
+\renewcommand{\author}{Florian Christopher Klee}      % Titel Vor Vorname Nachname, Titel Nach
+\newcommand{\matrikelnummer}{12124153}      % Matrikelnummer
+\newcommand{\studienkennzahl}{UA 066 876}                % Studienkennzahl
+\newcommand{\studienrichtung}{Masterstudium
+Physics}    % Studienrichtung
+\newcommand{\supervisor}{Univ.-Prof. Dr. Sofia Kantorovich}        % BetreuerIn
+
+
+\setlength{\parindent}{0cm}	% Absätze statt Einrückung Zeilenabstand -> das ist allerdings reine Geschmacksache; Man kann den befehl auch weglassen, dann werden die default Einstellungen genommen
+\setlength{\parskip}{0.5cm}                       
+
+\restylefloat{figure}	% Dieser Befehl gilt für alle Gleitumgebungen (float) -> Bilder. Aktivierung des \usepackage{float} 
+
+\pagestyle{empty}
+
+
+\begin{document} % Beginn des Dokuments
+%HEAD-----------------------------------------------------------
+
+% \huge
+\begin{center}
+    \textbf{Master's Thesis Exposé}
+\end{center}
+
+\begin{flushleft}
+    \normalsize  !!! preliminary Title: \\[0.2cm]
+    \large \textbf{\title} \\[1cm]
+\end{flushleft}
+
+\begin{tabular}{@{}ll}
+    \normalsize Student:              & \large \author         \\
+    \normalsize Matriculation number: & \large \matrikelnummer \\[0.5cm]
+    \normalsize Supervisor:           & \large \supervisor
+\end{tabular}
+
+%-----------------------------------------------------------------------------------
+
+\section{Research subject and problem statement}
+
+\subsection{Motivation}
+
+Colloidal motors reffer to systems in which colloidal particles, that is, particles stably dispersed in a carrier medium, are able to travel in a directional manner \cite{Chen2019}.\\
+Treatment of blood clots via thrombolytric drug delivery, has the problem that in the vicinity of a blood clot, there is little flow, by which to efficiently deliver the drug. One proposed method to improve this treatment is to use magnetic coloidal motors achived by a rotating magnetic field to induce a recirculation flow in the vicinity, in order to aid the diffusion of the drug or even mechanically erode the clot \cite{Cheng2014}.
+
+\subsection{Studied System}
+
+The system of interest is an experimental setup, that achieves a recirculation flow in a closed fluid channel. Simplified, the system is initially composed of a water based solution inside a channel of width 1 mm in which maghemite nanoparticles ($\sim 20$ nm) and some primary aggregates of them ($\sim 120-140$ nm) are dispersed.\\
+A magnetic field is applied, with a gradient in y direction and a rotating component. The rotating field leads to secondary aggregation into the visible rod shaped structures which spin synchronously with the field, while the field gradient causes the spinning rods to translate towards the back wall and thus produces the visible gradient in their concentration.\\
+The paper goes on to describe how the spinning rods excert a rightward force on the back wall (and adjacent fluid), and therefore experience a net force and translation to the left.\\
+As a result, the fluid in the region with the aggregates, although disturbed by the rotation, shows a net translation to the left and to counteract this flow in a closed channel, a rightward flow emerges in the front region.
+Some named parameters include, field amplitude $ H_0 =  \mathrm{6.4 \, kA m^{-1}},$ field frequency $f = \mathrm{5 \, Hz}$, volume fraction of particles $ \phi_\mathrm{p} =  \mathrm{3.2 \cdot 10^{-3}}$ and the resulting flow has a characteristic speed of $\sim 5-8 \, \mathrm{\mu m s^{-1}}$. \\
+
+The goal of the overarching project is to emulate this result, by the same mechanisms, in simulation. This report focuses on the creation of analogues to the spinning rod structures and their magnetic response.
+
+Magnetic behaviour of geometry under tSW method.
+\section{Research approach}
+raspberr
+\section{Work shedule}
+
+\tikzstyle{descript} = [text = black, align=left, align=left, outer sep=4pt,font = \footnotesize]
+\tikzstyle{activity} =[align=center,outer sep=1pt]
+
+\begin{center}
+    \begin{tikzpicture}[very thick, black]
+        \small
+
+        %% Coordinates
+        \coordinate (O) at (-1,0); % Origin
+        \coordinate (feb) at (0,0);
+        \coordinate (mar) at (1,0);
+        \coordinate (apr) at (2,0);
+        \coordinate (may) at (3,0);
+        \coordinate (jun) at (4,0);
+        \coordinate (jul) at (5,0);
+        \coordinate (aug) at (6,0);
+        \coordinate (sep) at (7,0);
+        \coordinate (oct) at (8,0);
+        \coordinate (nov) at (9,0);
+        \coordinate (dec) at (10,0);
+        \coordinate (jan) at (11,0);
+        \coordinate (feb2) at (12,0);
+        \coordinate (mar2) at (13,0);
+        \coordinate (F) at (14,0); %End
+        \coordinate (boxheight) at (0,1);
+
+        %% Filled regions
+        \fill[color=ColorOne!30] (feb) rectangle ($(mar)+(boxheight)$); % Theory
+        \fill[color=ColorTwo!30] (mar) rectangle ($(apr)+(boxheight)$); % solid
+        \shade[left color=ColorTwo!30, right color=ColorThree!30, middle color=ColorThree!30, shading=axis, shading angle = 90] ($(aug)+(-0.1,0)$) rectangle ($(dec)+(boxheight)+(0.1,0)$); % transition
+        %Implementation
+        \fill[color=ColorFour!30] (feb2) rectangle ($(mar2)+(boxheight)$);
+
+        \fill[color=lightgray] ($(dec)+(0,-1.7)$) rectangle ($(feb2)+(0,-2.5)$) node[black, midway] {write thesis};
+
+        %% Text inside filled regions
+        \draw ($(feb)+(2,0.5)$) node[activity,ColorOne] {theory};
+        \draw ($(mar)+(3,0.5)$) node[activity,ColorThree] {adapt to liquids};
+
+        % %% Description
+        \node[descript,fill=ColorOne!20,text=black, align=left, anchor=south west,draw=black,thin](D1) at (0,+1.7) {%
+            review theory;\\
+            learn necessary tools;\\
+            apply to simple systems};
+
+        \node[descript,fill=ColorTwo!20,text=black, align=left,draw=black,thin](D2) at ($(feb)+(+2.5,+2.5)$)%
+        {apply scalable \\architecture to solid};
+
+        \node[descript,fill=ColorFour!20,text=black, align=left, anchor=south west,draw=black,thin](D4) at ($(feb2)+(-2.4,2)$)%
+        {prepare defense};
+
+        % %% Events
+        \draw[thick,color=black] ($(dec)+(0,-0)$) -- ($(dec)+(0,-2.5)$); %node [below=0pt,align=center,black] {start writing thesis};
+        \draw[thick,color=black] ($(feb2)+(0,0)$) -- ($(feb2)+(0,-2.5)$); %node [below=0pt,align=center,black] {finish writing};
+        \draw[<-,thick,color=black] ($(mar2)+(0,0.1)$) -- ($(mar2)+(0,1.5)$) node [above=0pt,align=left,black, anchor=south] {defense};
+        %% Arrows
+        \path[->,color=ColorOne] ($(feb)+(2,+0.8)$) edge [out=90, in=-90]  ($(D1)+(0,-.8)$);
+        \path[->,color=ColorTwo]($(feb)+(0.5, 0.8)$)  edge [out=80, in=-90]  ($(D2)+(0,-.5)$);
+        \path[->,color=ColorFour]($(feb2)+(0.5, 0.8)$)  edge [out=120, in=-70]  ($(D4)+(-0,-0.5)$);
+
+        %% Time Arrow
+        \draw[->] (O) -- (F);
+        %% Ticks
+        \foreach \x in {0,1,...,12,13}
+        \draw(\x cm,3pt) -- (\x cm,-3pt);
+        %% Labels
+        \foreach \i \j in {-1/{1}, 0/{2}, 1/{3}, 2/{4}, 3/{5}, 4/{6}, 5/{7}, 6/{8}, 7/{9}, 8/{10}, 9/{11}, 10/{12}, 11/{1}, 12/{2}, 13/{3}}{
+                \draw (\i+0.5,0) node[below=3pt] {\j};
+            }
+
+        %2026 tick
+        \draw (jan) -- ($(jan)+(0,-1.)$) node [anchor=south west] {2027} node [anchor=south east] {2026};
+
+    \end{tikzpicture}
+\end{center}
+
+\section{Signatures}
+
+\vspace{4cm}
+\begin{table}[h!]
+    \begin{tabular}{p{8cm} p{8cm}}
+        \rule{6cm}{0.2pt}    & \rule{6cm}{0.2pt} \tabularnewline
+        \small Student, Date & \small Supervisor, Date \tabularnewline
+    \end{tabular}
+\end{table}
+% ------------------------------------------------------------
+\newpage
+\bibliographystyle{IEEEtr}
+\bibliography{references}
+
+% ------------------------------------------------------------
+
+\end{document}

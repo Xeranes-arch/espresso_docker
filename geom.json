@@ -1,0 +1,108 @@
+{
+    "entry_001": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2117965638651684,
+        "k": 10200,
+        "rmsd": 0.138,
+        "time": 297.75683426856995,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000
+    },
+    "entry_002": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2117965638651684,
+        "k": 17000,
+        "rmsd": 0.148,
+        "time": 377.3400733470917,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000
+    },
+    "entry_003": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2268982819325842,
+        "k": 28200,
+        "rmsd": 0.134,
+        "time": 700.9699091911316,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000,
+        "comment": "without lj shift up by 1sigma and high sigma in low temp"
+    },
+    "entry_004": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2727009470561799,
+        "k": 9900,
+        "rmsd": 0.162,
+        "time": 297.83818459510803,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000,
+        "comment": "without lj shift up by 1sigma and high sigma in low temp"
+    },
+    "entry_005": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2268982819325842,
+        "k": 18900,
+        "rmsd": 0.135,
+        "time": 475.74337792396545,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000,
+        "comment": "epsilon = 5"
+    },
+    "entry_006": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2727009470561799,
+        "k": 9200,
+        "rmsd": 0.118,
+        "time": 257.88325452804565,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000,
+        "comment": "epsilon = 20"
+    },
+    "entry_007": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2727009470561799,
+        "k": 9200,
+        "rmsd": 0.118,
+        "time": 197.00755405426025,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000,
+        "comment": "epsilon = 20"
+    },
+    "entry_008": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2727009470561799,
+        "k": 6500,
+        "rmsd": 0.153,
+        "time": 166.38415932655334,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000,
+        "comment": "epsilon = 20"
+    },
+    "entry_009": {
+        "type": "one_go",
+        "pnr": 64,
+        "factor": 1.2727009470561799,
+        "k": 9200,
+        "rmsd": 0.159,
+        "time": 161.93208050727844,
+        "kT": 0.001,
+        "gamma": 10,
+        "force cap": 1000,
+        "comment": "epsilon = 20"
+    }
+}

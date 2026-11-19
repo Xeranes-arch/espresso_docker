@@ -1,2 +1,0 @@
-Add vtk to DEMO
-Rebuild simulation for gcc comp to nvcc

@@ -1,0 +1,29 @@
+\thispagestyle {empty}
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Motivation}{4}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Studied System}{4}{subsection.1.2}%
+\contentsline {section}{\numberline {2}Models}{6}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Raspberry particles}{6}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Weeks-Chandler-Anderson potential}{6}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}The generalized Stoner-Wohlfarth model}{6}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Initial magnetization of a non-interacting solid}{8}{subsection.2.4}%
+\contentsline {subsubsection}{\numberline {2.4.1}with aligned easy axes}{9}{subsubsection.2.4.1}%
+\contentsline {subsubsection}{\numberline {2.4.2}with randomly distributed easy axes}{9}{subsubsection.2.4.2}%
+\contentsline {section}{\numberline {3}Methods}{9}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Langevin thermostat}{9}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Velocity Verlet}{10}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Finding ellipsoid geometries}{11}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Smooth shell configurations}{11}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Homogeneous configurations}{12}{subsubsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.4}Thermal Stoner-Wohlfarth}{12}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Results and discussion}{13}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Ellipsoid setup}{13}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Magnetic properties}{14}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Validation of initial magnetization curve}{15}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Influence of ellipsoidal geometry on hysteresis}{16}{subsubsection.4.2.2}%
+\contentsline {section}{\numberline {5}Conclusion}{19}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Summary of findings}{19}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Outlook}{19}{subsection.5.2}%
+\contentsline {section}{Appendix}{20}{subsection.5.2}%
+\contentsline {section}{\numberline {A}Equilibrium magnetization calculations}{20}{appendix.A}%
+\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 
