@@ -1,4 +1,4 @@
-_data/
+_data/*
 !_data/vtk_frames/
 _data/vtk_frames/*
 !_data/vtk_frames/mag_response/
