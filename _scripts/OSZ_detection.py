@@ -38,15 +38,15 @@ time_scale = np.sqrt(mass_scale*length_scale**2/energy_scale)
 # endregion
 
 # region: Parameters #################################################################
-ratio = 2
-# ratio = int(sys.argv[1])  # for running from CUE
+# ratio = 2
+ratio = int(sys.argv[1])  # for running from CUE
 
-Lambda = 1
-# Lambda = float(sys.argv[2])  # for running from CUE
+# Lambda = 2
+Lambda = float(sys.argv[2])  # for running from CUE
 prefactor_dds = mu_0/(4*np.pi)
 
-KV = 4
-# KV = float(sys.argv[3])  # for running from CUE
+# KV = 6
+KV = float(sys.argv[3])  # for running from CUE
 easy_axis = [0, 0, 1]
 
 field_dir = [0, 0, 1]
@@ -75,7 +75,6 @@ iterations += 5-iterations % 5 + 1
 
 # Mag
 m = np.sqrt(4*np.pi/mu_0 * Lambda * sigma ** 3 * kT)  # Mag moment
-print("Mag. moment: ", m)
 H_ani_inv = 1/(2*KV/m)  # Inverse Anisotropy Field
 
 # avoids numerical instabilities that can happen when you give a 0 value in any direction
@@ -145,69 +144,102 @@ if vis:
     for item in folder_path.iterdir():
         if item.is_file():
             item.unlink()
+
+update_xi(system, 0, m, field_dir)
 # endregion
 
-# region: Main Loop ################################################################
-update_xi(system, 0, m, field_dir)
+# region: pre catch osz to save compute time
+system.integrator.run(100)
 
-# Equil
-prev = 0
-count = 0
-i = 0
-
-# Osz var
-sample_size = 10
-idxs = random.sample(range(1, 512), sample_size)
-buffer = [np.zeros((sample_size, 3))]*3
+r = 3
+idxs = range(1, 512)
+buffer = [np.zeros((len(idxs), 3))]*3
 buffer_len = len(buffer)
 buffer_idx = 0
 nr_of_osz_caught = 0
 score = 0.0
-
-for i in range(20):
-    writevtk(
-        f"_data/vtk_frames/mag_response/frame{i}.vtk", system, mag=True, easy_axes=True)
-    system.integrator.run(101)
-    new = system.analysis.energy()["total"]
-    plt.scatter(i, new, c="blue", marker="+")
-    if abs(prev - new) <= abs(prev/1000):
-        count += 1
-        if count > 10:
-            print(LINE)
-            print("EQUIL")
-            break
-    else:
-        count = 0
-    prev = new
-
+for i in range(3+r):
+    system.integrator.run(1)
     # Oszillation detection
     buffer[buffer_idx] = system.part.all().dip[idxs]
     buffer_idx = (buffer_idx + 1) % buffer_len
-    v0, v1, v2 = (
-        buffer[(buffer_idx + offset) % buffer_len]
-        for offset in range(buffer_len)
-    )
-    for sample_idx in range(len(idxs)):
-        if detect_oscillation(
-            v0[sample_idx], v1[sample_idx], v2[sample_idx]
-        ):
-            nr_of_osz_caught += 1
-    print(f"Detected oszillations among sampled particles: {nr_of_osz_caught}")
-    if i >= 2:
-        score = nr_of_osz_caught / ((i - 1) * sample_size)
-    if i > 5 and score >= 0.9:
-        print(LINE)
-        print("OSZILLATION")
-        break
+    if i >= 3:
+        v0, v1, v2 = (
+            buffer[(buffer_idx + offset) % buffer_len]
+            for offset in range(buffer_len)
+        )
+        for sample_idx in range(len(idxs)):
+            if detect_oscillation(
+                v0[sample_idx], v1[sample_idx], v2[sample_idx]
+            ):
+                nr_of_osz_caught += 1
+# endregion
+
+if nr_of_osz_caught/512/r > 0.9:
+    score = nr_of_osz_caught/512/r
+else:
+    # region: Equilibriation ##############################################################
+    print(LINE)
+    print("Equillibriating...")
+
+    prev = 0
+    count = 0
+    i = 0
+    for i in tqdm.tqdm(range(100)):
+
+        writevtk(
+            f"_data/vtk_frames/mag_response/frame{i}.vtk", system, mag=True, easy_axes=True)
+
+        system.integrator.run(101)
+
+        new = system.analysis.energy()["total"]
+        plt.scatter(i, new, c="blue", marker="+")
+
+        if abs(prev - new) <= abs(prev/1000):
+            count += 1
+            if count > 10:
+                print(LINE)
+                print("EQUIL")
+                break
+        else:
+            count = 0
+        prev = new
+
+    plt.savefig("equil.png")
+    plt.clf()
+    # endregion
+
+    # region: Osz var #####################################################################
+    for i in range(20):
+        system.integrator.run(1)
+        # Oszillation detection
+        buffer[buffer_idx] = system.part.all().dip[idxs]
+        buffer_idx = (buffer_idx + 1) % buffer_len
+
+        if i >= 3:
+            v0, v1, v2 = (
+                buffer[(buffer_idx + offset) % buffer_len]
+                for offset in range(buffer_len)
+            )
+            for sample_idx in range(len(idxs)):
+                if detect_oscillation(
+                    v0[sample_idx], v1[sample_idx], v2[sample_idx]
+                ):
+                    nr_of_osz_caught += 1
+            print(f"Detected oszillations: {nr_of_osz_caught}")
+            score = nr_of_osz_caught / ((i - 1) * len(idxs))
+        if i > 5 and score >= 0.9:
+            print(LINE)
+            print("OSZILLATION")
+            break
+    # endregion
 
 writevtk(
-    f"_data/vtk_frames/osz_end_frames/r{ratio}l{Lambda}KV{KV}.vtk", system, mag=True, easy_axes=True)
+    f"_data/vtk_frames/osz_end_frames/r{ratio}l{Lambda}KV{KV}frame_1.vtk", system, mag=True, easy_axes=True)
 system.integrator.run(1)
 writevtk(
-    f"_data/vtk_frames/osz_end_frames/r{ratio}l{Lambda}KV{KV}.vtk", system, mag=True, easy_axes=True)
+    f"_data/vtk_frames/osz_end_frames/r{ratio}l{Lambda}KV{KV}frame_2.vtk", system, mag=True, easy_axes=True)
 
-plt.savefig("equil.png")
-plt.clf()
 save_to_json(
     Path(__file__).resolve().parent.parent / "osz.json",
     {"ratio": ratio, "Lambda": Lambda, "KV": KV, "score": score},

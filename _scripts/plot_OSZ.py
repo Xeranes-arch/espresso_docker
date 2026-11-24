@@ -3,8 +3,9 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
-ratio = 2
+ratio = float(sys.argv[1])
 
 
 def cell_edges(values):

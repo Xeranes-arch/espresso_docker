@@ -38,12 +38,12 @@ time_scale = np.sqrt(mass_scale*length_scale**2/energy_scale)
 # endregion
 
 # region: Parameters ################################################################
-Lambda = 6
-# Lambda = float(sys.argv[1]) # for running from CUE
+# Lambda = 6
+Lambda = float(sys.argv[1])  # for running from CUE
 prefactor_dds = mu_0/(4*np.pi)
 
-KV = 8
-# KV = float(sys.argv[2]) # for running from CUE
+# KV = 8
+KV = float(sys.argv[2])  # for running from CUE
 easy_axis = [0, 0, 1]
 
 ulim_xis = 15
@@ -138,9 +138,9 @@ xis = hysteresis_xis_sin(ulim_xis, iterations)
 
 if vis:
     os.makedirs(
-        f"_data/vtk_frames/mag_response/", exist_ok=True)
+        f"_data/vtk_frames/mag_response{Lambda}{KV}/", exist_ok=True)
     folder_path = Path(
-        f"_data/vtk_frames/mag_response/")
+        f"_data/vtk_frames/mag_response{Lambda}{KV}/")
     for item in folder_path.iterdir():
         if item.is_file():
             item.unlink()
@@ -148,7 +148,7 @@ if vis:
 
 # region: Main Loop ################################################################
 update_xi(system, 0, m, field_dir)
-system.integrator.run(100)
+# system.integrator.run(100)
 
 dipms = []
 
@@ -165,7 +165,7 @@ for i in tqdm.tqdm(range(iterations)):
     # write animation frame
     if vis and frame/nr_of_frames <= i/iterations:
         writevtk(
-            f"_data/vtk_frames/mag_response/mag{frame}.vtk", system, mag=True, easy_axes=True)
+            f"_data/vtk_frames/mag_response{Lambda}{KV}/mag{frame}.vtk", system, mag=True, easy_axes=True)
         frame += 1
 
     # Record Energies, per hand calculated for anisotropy energy

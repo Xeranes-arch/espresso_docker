@@ -10,8 +10,8 @@ with open(filename, "w") as f:
     json.dump({}, f, indent=4)
 
 ratios = [2, 6]
-lams = np.arange(1, 3.1, 0.5)
-KVs = np.arange(3, 9, 1)
+lams = np.linspace(3, 5, 10)
+KVs = np.linspace(8, 13, 10)
 
 with tqdm.tqdm(total=len(ratios), desc="Ratio", position=0, leave=True) as ratio_bar:
     with tqdm.tqdm(total=len(lams), desc="Lambda", position=1, leave=True) as lambda_bar:
@@ -34,3 +34,14 @@ with tqdm.tqdm(total=len(ratios), desc="Ratio", position=0, leave=True) as ratio
                         kv_bar.update(1)
                     lambda_bar.update(1)
                 ratio_bar.update(1)
+
+
+for ratio in ratios:
+    subprocess.run(
+        [
+            "/home/xeranes/espresso/build/pypresso",
+            "/workspace/_scripts/plot_OSZ.py",
+            str(ratio)
+        ],
+        check=True,
+    )
