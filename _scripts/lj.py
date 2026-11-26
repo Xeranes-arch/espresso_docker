@@ -50,10 +50,10 @@ def lj_zero_crossings(sigma, shift, r_off):
 
 epsilon = 1
 sigma = 1
-cutoff = 4 * sigma
-shift = -1
+cutoff = 10
+shift = 0
 
-off = 0.077
+off = 0
 # ============================================================
 # Radial coordinate
 # ============================================================

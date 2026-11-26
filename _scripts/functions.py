@@ -1,3 +1,5 @@
+# AI. Basically the whole lot of it.
+
 from scipy.signal import find_peaks
 from numba import njit, prange
 import numpy as np
@@ -28,7 +30,7 @@ def rpos(box_l):
     return np.random.uniform(0.0, box_l, size=3)
 
 
-def writevtk(path, system, types=None, mag=False, easy_axes=False, half_box_shift=False):
+def writevtk(path, system, types=None, mag=False, dir=False, easy_axes=False, half_box_shift=False):
     """Custom writevtk that further handles the file made by espresso"""
     if half_box_shift:
         system.part.all().pos += system.box_l/2
@@ -64,13 +66,25 @@ def writevtk(path, system, types=None, mag=False, easy_axes=False, half_box_shif
     if mag:
         out.append("\nVECTORS mag float")
         for part in system.part.all():
-            dip = part.dip
-            norm = (dip[0]**2 + dip[1]**2 + dip[2]**2)**0.5
+            dir = part.dip
+            norm = (dir[0]**2 + dir[1]**2 + dir[2]**2)**0.5
             if norm > 0:  # Avoid division by zero
-                dip_normalized = [x / norm for x in dip]
+                dir_normalized = [x / norm for x in dir]
             else:
-                dip_normalized = [0, 0, 0]  # Keep zero vector as is
-            v_str = " ".join(map(str, dip_normalized))
+                dir_normalized = [0, 0, 0]  # Keep zero vector as is
+            v_str = " ".join(map(str, dir_normalized))
+            out.append(f"\n{v_str}")
+
+    if dir:
+        out.append("\nVECTORS dir float")
+        for part in system.part.all():
+            dir = part.director
+            norm = (dir[0]**2 + dir[1]**2 + dir[2]**2)**0.5
+            if norm > 0:  # Avoid division by zero
+                dir_normalized = [x / norm for x in dir]
+            else:
+                dir_normalized = [0, 0, 0]  # Keep zero vector as is
+            v_str = " ".join(map(str, dir_normalized))
             out.append(f"\n{v_str}")
 
     if easy_axes:
@@ -152,17 +166,21 @@ def mean_rmsd_smallest(ids, system):
 
 def shuffle_pos(system, AXES):
     n_particles = len(system.part.all())
-    tolerance = 0
+    spacing = 1
     while True:
         arr_of_points = hex_ellipsoid_points(
-            AXES[0]+tolerance, AXES[1]+tolerance, AXES[2]+tolerance, spacing=1)
+            AXES[0], AXES[1], AXES[2], spacing=spacing)
 
         if (len(arr_of_points) > n_particles):
             break
-        tolerance += 0.01
+        spacing -= 0.01
     arr_of_points = arr_of_points[:n_particles]
     # Place particle
     system.part.all().pos = arr_of_points
+
+    if spacing == 1:
+        return True
+    return False
 
 
 @njit
@@ -1089,3 +1107,162 @@ def detect_oscillation(v0, v1, v2):
     if np.dot(v1, v0) < 0 and np.dot(v1, v2) < 0:  # 0.x for higher min angle
         return True
     return False
+
+
+@njit
+def get_distance_to_ellipsoid_surface(pos, axes):
+    """
+    Approximate radial distance from pos to the ellipsoid surface.
+    Assumes an ellipsoid centered at (0,0,0).
+    """
+    x, y, z = pos
+    a, b, c = axes
+
+    r = np.linalg.norm(pos)
+
+    if r < 1e-12:
+        return min(a, b, c)
+
+    direction = pos / r
+
+    surface_radius = 1.0 / np.sqrt(
+        (direction[0] / a)**2 +
+        (direction[1] / b)**2 +
+        (direction[2] / c)**2
+    )
+
+    return surface_radius - r
+
+
+@njit
+def get_particle_closest_to_boundary(
+    particle_positions, axes, margin
+):
+    best_distance = np.inf
+    best_id = -1
+
+    for i in range(len(particle_positions)):
+        pos = particle_positions[i]
+
+        l_limit, u_limit = get_limits_numba(axes, pos)
+        root = bisect_numba(l_limit, u_limit, axes, pos)
+
+        surface_pos = get_surface_position_numba(root, axes, pos)
+
+        distance = np.linalg.norm(surface_pos - pos)
+
+        if distance >= margin and distance < best_distance:
+            best_distance = distance
+            best_id = i
+
+    return best_id
+
+
+@njit(parallel=True)
+def count_particles_in_shell(particle_positions, axes, margin=0.2):
+    """
+    Counts particles within `margin` of the ellipsoid surface.
+
+    Only counts particles inside the ellipsoid.
+    """
+    count = 0
+
+    for i in prange(len(particle_positions)):
+        pos = particle_positions[i]
+
+        l_limit, u_limit = get_limits_numba(axes, pos)
+        root = bisect_numba(l_limit, u_limit, axes, pos)
+
+        surface_pos = get_surface_position_numba(root, axes, pos)
+
+        distance = np.linalg.norm(surface_pos - pos)
+
+        if 0 <= distance <= margin:
+            count += 1
+
+    return count
+
+
+@njit
+def detect_overlap_ids(
+    particle_positions, axes,
+    min_distance=1.0, margin=0.2
+):
+    """
+    Returns IDs of particles that overlap with another particle
+    within the shell region.
+
+    Particles outside the shell region are ignored entirely.
+    """
+    n = len(particle_positions)
+    min_dist_sq = min_distance**2
+
+    # Identify shell particles
+    in_shell = np.zeros(n, dtype=np.bool_)
+
+    for i in range(n):
+        pos = particle_positions[i]
+
+        l_limit, u_limit = get_limits_numba(axes, pos)
+        root = bisect_numba(l_limit, u_limit, axes, pos)
+        surface_pos = get_surface_position_numba(root, axes, pos)
+
+        distance = np.linalg.norm(surface_pos - pos)
+
+        if 0 <= distance <= margin:
+            in_shell[i] = True
+
+    # To colour all overlaps
+    in_shell[:] = True
+    # Check overlaps exclusively between shell particles
+    overlapping = np.zeros(n, dtype=np.bool_)
+
+    for i in range(n):
+        if not in_shell[i]:
+            continue
+
+        for j in range(i + 1, n):
+            if not in_shell[j]:
+                continue
+
+            dx = particle_positions[i, 0] - particle_positions[j, 0]
+            dy = particle_positions[i, 1] - particle_positions[j, 1]
+            dz = particle_positions[i, 2] - particle_positions[j, 2]
+
+            if dx*dx + dy*dy + dz*dz < min_dist_sq:
+                overlapping[i] = True
+                overlapping[j] = True
+
+    return np.arange(len(particle_positions))[overlapping]
+
+
+@njit
+def particles_not_in_shell(
+    particle_positions, ids_to_check,
+    axes, margin=0.2
+):
+    not_in_shell = 0
+
+    for target_id in ids_to_check:
+        found = False
+
+        for i in range(len(particle_positions)):
+            if i == target_id:
+                found = True
+                pos = particle_positions[i]
+                break
+
+        if not found:
+            not_in_shell += 1
+            continue
+
+        l_limit, u_limit = get_limits_numba(axes, pos)
+        root = bisect_numba(l_limit, u_limit, axes, pos)
+        surface_pos = get_surface_position_numba(root, axes, pos)
+
+        distance = np.linalg.norm(surface_pos - pos)
+
+        if distance < 0 or distance > margin:
+            not_in_shell += 1
+
+    return not_in_shell

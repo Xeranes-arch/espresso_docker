@@ -16,6 +16,12 @@ import espressomd.propagation
 Propagation = espressomd.propagation.Propagation
 # endregion
 
+
+def print(*args, override=False, **kwargs):
+    if override or not subprocess:
+        __builtins__.print(*args, **kwargs)
+
+
 # region: Units ################################################################
 np.random.seed(42)
 LINE = "\n__________________________"
@@ -38,15 +44,19 @@ time_scale = np.sqrt(mass_scale*length_scale**2/energy_scale)
 # endregion
 
 # region: Parameters #################################################################
-# ratio = 2
-ratio = int(sys.argv[1])  # for running from CUE
 
-# Lambda = 2
-Lambda = float(sys.argv[2])  # for running from CUE
+subprocess = True
+if subprocess:
+    ratio = int(sys.argv[1])
+    Lambda = float(sys.argv[2])
+    KV = float(sys.argv[3])
+else:
+    ratio = 0
+    Lambda = 1
+    KV = 6
+
 prefactor_dds = mu_0/(4*np.pi)
 
-# KV = 6
-KV = float(sys.argv[3])  # for running from CUE
 easy_axis = [0, 0, 1]
 
 field_dir = [0, 0, 1]
@@ -55,7 +65,7 @@ field_dir = [0, 0, 1]
 frequency = 1e7
 
 # Is ratio for tSW and gives time step
-kMC_timestep_ratio = 0.1
+# kMC_timestep_ratio = 0.001
 kMC_timestep_ratio = 1
 # Simulated steps per value of xi
 step = 11
@@ -96,9 +106,15 @@ system.min_global_cut = 20  # has to exceed smallest virt distance
 system.thermostat.set_langevin(
     kT=kT, gamma=1, gamma_rotation=1, seed=42)  # doesn't apply really but necessary
 
-# Particle coordinates
-filename = f"_data/coordinates/512.0_ratio_{ratio}.0_1.0.txt"
-poss = np.loadtxt(filename)
+if ratio == 0:
+    poss = fcc_box_points(7, 7, 7)
+    pnr = len(poss)
+else:
+    # Particle coordinates
+    filename = f"_data/coordinates/512.0_ratio_{ratio}.0_1.0.txt"
+    poss = np.loadtxt(filename)
+    pnr = 512
+# exit()
 
 # Easy axis Particle - applies to all others
 p1 = system.part.add(pos=[box_l/2, box_l/2, box_l/2],
@@ -152,7 +168,7 @@ update_xi(system, 0, m, field_dir)
 system.integrator.run(100)
 
 r = 3
-idxs = range(1, 512)
+idxs = range(1, pnr)
 buffer = [np.zeros((len(idxs), 3))]*3
 buffer_len = len(buffer)
 buffer_idx = 0
@@ -175,8 +191,8 @@ for i in range(3+r):
                 nr_of_osz_caught += 1
 # endregion
 
-if nr_of_osz_caught/512/r > 0.9:
-    score = nr_of_osz_caught/512/r
+if nr_of_osz_caught/pnr/r > 0.9:
+    score = nr_of_osz_caught/pnr/r
 else:
     # region: Equilibriation ##############################################################
     print(LINE)
@@ -210,6 +226,7 @@ else:
     # endregion
 
     # region: Osz var #####################################################################
+    nr_of_osz_caught = 0
     for i in range(20):
         system.integrator.run(1)
         # Oszillation detection
@@ -234,13 +251,18 @@ else:
             break
     # endregion
 
+name = f"t_{time_step}_r_{ratio}_l_{Lambda}_KV_{KV}_"
+
 writevtk(
-    f"_data/vtk_frames/osz_end_frames/r{ratio}l{Lambda}KV{KV}frame_1.vtk", system, mag=True, easy_axes=True)
+    f"_data/vtk_frames/osz_end_frames/{name}frame_1.vtk", system, mag=True, easy_axes=True)
 system.integrator.run(1)
 writevtk(
-    f"_data/vtk_frames/osz_end_frames/r{ratio}l{Lambda}KV{KV}frame_2.vtk", system, mag=True, easy_axes=True)
+    f"_data/vtk_frames/osz_end_frames/{name}frame_2.vtk", system, mag=True, easy_axes=True)
 
 save_to_json(
-    Path(__file__).resolve().parent.parent / "osz.json",
-    {"ratio": ratio, "Lambda": Lambda, "KV": KV, "score": score},
+    Path(__file__).resolve().parent.parent /
+    f"_data/osz/t_{time_step}_r_{ratio}_osz.json",
+    {"Lambda": Lambda, "KV": KV, "score": score},
 )
+
+print(score, override=True)

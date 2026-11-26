@@ -1,0 +1,8 @@
+sphere
+solid
+
+reduce time step factor 10^3
+
+gain definition or move barrier?
+
+release rot

@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-ratio = float(sys.argv[1])
-
 
 def cell_edges(values):
     if len(values) == 1:
@@ -21,16 +19,16 @@ def cell_edges(values):
 
 
 def main():
-    data_path = Path(__file__).resolve().parent.parent / "osz.json"
+    data_path = Path(__file__).resolve().parent.parent / \
+        "_data/osz/t_0.01293634362971872_r_0_osz.json"
     with data_path.open(encoding="utf-8") as json_file:
         data = json.load(json_file)
 
     records = [
         entry for entry in data.values()
-        if isinstance(entry, dict) and entry.get("ratio") == ratio
     ]
     if not records:
-        raise ValueError(f"No OSZ records found for ratio {ratio:g}")
+        raise ValueError(f"No OSZ records found")
 
     lambdas = np.array(sorted({float(entry["Lambda"]) for entry in records}))
     kv_values = np.array(sorted({float(entry["KV"]) for entry in records}))
@@ -61,11 +59,11 @@ def main():
     ax.set_yticks(lambdas)
     ax.set_xlabel("KV")
     ax.set_ylabel("Lambda")
-    ax.set_title(f"OSZ score (ratio = {ratio:g})")
+    ax.set_title(f"OSZ score")
     fig.colorbar(heatmap, ax=ax, label="Score")
     fig.tight_layout()
 
-    output_path = data_path.with_name(f"osz_heatmap_ratio_{ratio:g}.png")
+    output_path = data_path.with_name(f"_osz_heatmap.png")
     fig.savefig(output_path, dpi=200)
     print(f"Saved heatmap to {output_path}")
 
